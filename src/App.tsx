@@ -39,7 +39,7 @@ import {
   Rocket
 } from 'lucide-react';
 import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend, Pie } from 'recharts';
-import logo from './assets/0314ca9ef2ad7a1d30a0d23fdfefdf6f06ebf23c.png';
+import logoDefinitiva from './assets/0314ca9ef2ad7a1d30a0d23fdfefdf6f06ebf23c.png';
 
 type Screen = 'splash' | 'login' | 'signup' | 'forgot-password' | 'reset-password' | 'dashboard' | 'investment-details' | 'investment-purchase' | 'investment-result';
 type IconType = 'coffee' | 'car' | 'home' | 'shopping' | 'smartphone';

@@ -624,12 +624,34 @@ const [expenses, setExpenses] = useState<Expense[]>([]);
     }));
   }, [expenses]);
 
-  // Enhanced monthly data with financial breakdown
-  const monthlyData = React.useMemo(() => [
-    { month: 'Jan', receitas: 3000, gastos: 2200, investimentos: 300 },
-    { month: 'Fev', receitas: 3000, gastos: 2500, investimentos: 200 },
-    { month: 'Mar', receitas: salary, gastos: totalExpenses, investimentos: 150 },
-  ], [salary, totalExpenses]);
+// Enhanced monthly data with real-time saving
+const [monthlyData, setMonthlyData] = useState(() => {
+  const saved = localStorage.getItem("monthlyData");
+  return saved ? JSON.parse(saved) : [];
+});
+
+// Atualiza o gráfico sempre que mudar o salário ou gastos
+useEffect(() => {
+  const currentMonth = new Date().toLocaleString("pt-BR", { month: "short" }); // ex: "nov"
+  const existingMonth = monthlyData.find((m) => m.month === currentMonth);
+
+  let updated;
+  if (existingMonth) {
+    updated = monthlyData.map((m) =>
+      m.month === currentMonth
+        ? { ...m, receitas: salary, gastos: totalExpenses, investimentos: 150 }
+        : m
+    );
+  } else {
+    updated = [
+      ...monthlyData,
+      { month: currentMonth, receitas: salary, gastos: totalExpenses, investimentos: 150 },
+    ];
+  }
+
+  setMonthlyData(updated);
+  localStorage.setItem("monthlyData", JSON.stringify(updated));
+}, [salary, totalExpenses]);
 
   // 🔵 1. Gráfico de Pizza (Distribuição de Recursos) - DATA
   const financialDistributionPieData = React.useMemo(() => {

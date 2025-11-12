@@ -1315,245 +1315,101 @@ data.push({
                 </CardContent>
               </Card>
 
-              {/* Line Chart - Mobile */}
-              <Card className="shadow-md border-0 rounded-xl mb-4">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
-                      <TrendingUp className="w-4 h-4 text-white" />
-                    </div>
-                    Evolução dos Últimos Meses
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={monthlyData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis 
-                          dataKey="month" 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 10, fill: '#666' }}
-                        />
-                        <YAxis 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 10, fill: '#666' }}
-                          tickFormatter={(value) => `R$ ${value}`}
-                        />
-                        <Tooltip 
-                          formatter={(value: any, name: string) => [
-                            `R$ ${value.toFixed(2)}`,
-                            name === 'receitas' ? 'Receitas' :
-                            name === 'gastos' ? 'Gastos' : 'Investimentos'
-                          ]}
-                          labelFormatter={(label) => `Mês: ${label}`}
-                          contentStyle={{ 
-                            backgroundColor: 'white', 
-                            border: '1px solid #e0e0e0',
-                            borderRadius: '8px',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                            fontSize: '12px'
-                          }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="receitas" 
-                          stroke="#10B981" 
-                          strokeWidth={2}
-                          dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
-                          activeDot={{ r: 5, fill: '#10B981' }}
-                          name="Receitas"
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="gastos" 
-                          stroke="#EF4444" 
-                          strokeWidth={2}
-                          dot={{ fill: '#EF4444', strokeWidth: 2, r: 3 }}
-                          activeDot={{ r: 5, fill: '#EF4444' }}
-                          name="Gastos"
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="investimentos" 
-                          stroke="#046BF4" 
-                          strokeWidth={2}
-                          dot={{ fill: '#046BF4', strokeWidth: 2, r: 3 }}
-                          activeDot={{ r: 5, fill: '#046BF4' }}
-                          name="Investimentos"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Line Chart - Mobile */}
+<Card className="shadow-md border-0 rounded-xl mb-4">
+  <CardHeader className="pb-3">
+    <CardTitle className="flex items-center gap-2 text-sm">
+      <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
+        <TrendingUp className="w-4 h-4 text-white" />
+      </div>
+      Evolução dos Últimos Meses
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="h-48">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart 
+          data={
+            selectedMonth 
+              ? monthlyData.filter((d) => d.month === selectedMonth)
+              : monthlyData
+          }
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis 
+            dataKey="month" 
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 10, fill: '#666' }}
+          />
+          <YAxis 
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 10, fill: '#666' }}
+            tickFormatter={(value) => `R$ ${value}`}
+          />
+          <Tooltip 
+            formatter={(value: any, name: string) => [
+              `R$ ${value.toFixed(2)}`,
+              name === 'receitas' ? 'Receitas' :
+              name === 'gastos' ? 'Gastos' : 'Investimentos'
+            ]}
+            labelFormatter={(label) => `Mês: ${label}`}
+            contentStyle={{ 
+              backgroundColor: 'white', 
+              border: '1px solid #e0e0e0',
+              borderRadius: '8px',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              fontSize: '12px'
+            }}
+          />
+          <Line 
+            type="monotone" 
+            dataKey="receitas" 
+            stroke="#10B981" 
+            strokeWidth={2}
+            dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
+            activeDot={{ r: 5, fill: '#10B981' }}
+            name="Receitas"
+          />
+          <Line 
+            type="monotone" 
+            dataKey="gastos" 
+            stroke="#EF4444" 
+            strokeWidth={2}
+            dot={{ fill: '#EF4444', strokeWidth: 2, r: 3 }}
+            activeDot={{ r: 5, fill: '#EF4444' }}
+            name="Gastos"
+          />
+          <Line 
+            type="monotone" 
+            dataKey="investimentos" 
+            stroke="#046BF4" 
+            strokeWidth={2}
+            dot={{ fill: '#046BF4', strokeWidth: 2, r: 3 }}
+            activeDot={{ r: 5, fill: '#046BF4' }}
+            name="Investimentos"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
 
-              {/* Pie Chart - Mobile */}
-              <Card className="shadow-md border-0 rounded-xl mb-4">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
-                      <PieChart className="w-4 h-4 text-white" />
-                    </div>
-                    Distribuição de Recursos
-                  </CardTitle>
-                  <p className="text-xs text-gray-600">
-                    Toque nas fatias para detalhes
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  {financialDistributionPieData.length > 0 ? (
-                    <div className="space-y-4">
-                      {/* Gráfico de Pizza - Mobile */}
-                      <div className="h-40">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsPieChart>
-                            <Pie
-                              data={financialDistributionPieData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={25}
-                              outerRadius={60}
-                              paddingAngle={2}
-                              dataKey="value"
-                              onClick={handlePieSliceClick}
-                            >
-                              {financialDistributionPieData.map((entry, index) => (
-                                <Cell 
-                                  key={`cell-${index}`} 
-                                  fill={entry.color} 
-                                  stroke={selectedPieSlice === entry.name ? '#000' : 'none'}
-                                  strokeWidth={selectedPieSlice === entry.name ? 2 : 0}
-                                  style={{ cursor: 'pointer' }}
-                                />
-                              ))}
-                            </Pie>
-                            <Tooltip 
-                              formatter={(value: any, name: string) => [
-                                `R$ ${value.toFixed(2)}`,
-                                name
-                              ]}
-                              contentStyle={{ 
-                                backgroundColor: 'white', 
-                                border: '1px solid #e0e0e0',
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                                fontSize: '12px'
-                              }}
-                            />
-                          </RechartsPieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      
-                      {/* Legend Mobile */}
-                      <div className="space-y-2">
-                        {financialDistributionPieData.map((item, index) => (
-                          <motion.div 
-                            key={item.name} 
-                            className={`p-3 rounded-lg border transition-all cursor-pointer ${
-                              selectedPieSlice === item.name 
-                                ? 'border-gray-400 bg-gray-50' 
-                                : 'border-transparent bg-gray-100'
-                            }`}
-                            onClick={() => handlePieSliceClick(item, index)}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div 
-                                className="w-4 h-4 rounded-full flex-shrink-0" 
-                                style={{ backgroundColor: item.color }}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{item.name}</p>
-                                <p className="text-xs text-gray-600">{item.percentage}% do total</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-sm" style={{ color: item.color }}>
-                                  R$ {item.value.toFixed(2)}
-                                </p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-40 flex items-center justify-center text-gray-500">
-                      <div className="text-center">
-                        <PieChart className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Sem dados</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+    {/* 🔽 Novo seletor de mês */}
+    <div className="mt-4 flex justify-center">
+      <select
+        value={selectedMonth || ''}
+        onChange={(e) => setSelectedMonth(e.target.value || null)}
+        className="px-3 py-2 border rounded-lg text-sm bg-white shadow-sm"
+      >
+        <option value="">Todos os meses</option>
+        {monthlyData.map((m) => (
+          <option key={m.month} value={m.month}>{m.month}</option>
+        ))}
+      </select>
+    </div>
+  </CardContent>
+</Card>
 
-              {/* Edit Cards - Mobile */}
-              <div className="space-y-4">
-                {/* Salary Card - Mobile */}
-                <Card className="shadow-md border-0 rounded-xl">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-sm">
-                      <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
-                        <DollarSign className="w-4 h-4 text-white" />
-                      </div>
-                      Salário Mensal
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {editingSalary ? (
-                      <div className="space-y-3">
-                        <Input
-                          type="number"
-                          value={tempSalary}
-                          onChange={(e) => setTempSalary(e.target.value)}
-                          className="h-10 rounded-lg"
-                          placeholder="Digite o novo salário"
-                        />
-                        <div className="flex gap-2">
-                          <Button 
-                            onClick={updateSalary} 
-                            size="sm" 
-                            className="flex-1 rounded-lg hover:brightness-110 transition-all"
-                            style={{ backgroundColor: '#046BF4' }}
-                          >
-                            Salvar
-                          </Button>
-                          <Button 
-                            onClick={() => setEditingSalary(false)} 
-                            variant="outline"
-                            size="sm" 
-                            className="flex-1 rounded-lg"
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-3">
-                          <p className="text-xl font-semibold text-green-600">R$ {salary.toFixed(2)}</p>
-                          <p className="text-sm text-gray-500">Valor atual</p>
-                        </div>
-                        <Button
-                          onClick={() => {
-                            setEditingSalary(true);
-                            setTempSalary(salary.toString());
-                          }}
-                          variant="outline"
-                          className="w-full rounded-lg border-2 hover:bg-sky-50 transition-all text-sm"
-                          style={{ borderColor: '#046BF4', color: '#046BF4' }}
-                        >
-                          <DollarSign className="w-4 h-4 mr-2" />
-                          Modificar Salário
-                        </Button>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
 
                 {/* Credit Card - Mobile */}
                 <Card className="shadow-md border-0 rounded-xl">

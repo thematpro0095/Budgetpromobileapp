@@ -181,8 +181,8 @@ export default function App() {
   const [resetEmail, setResetEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [salary, setSalary] = useState(3000);
-  const [creditLimit, setCreditLimit] = useState(2000);
+  const [salary, setSalary] = useState(0);
+  const [creditLimit, setCreditLimit] = useState(0);
   
   // New financial control states
   const [salaryUsed, setSalaryUsed] = useState(0);

@@ -2013,6 +2013,7 @@ data.push({
 </div>
 );
 }
+                  
   if (currentScreen === 'investment-details') {
     return (
       <div className="min-h-screen bg-gray-50">

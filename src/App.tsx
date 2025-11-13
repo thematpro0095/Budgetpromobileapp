@@ -2012,9 +2012,10 @@ data.push({
   </Card>
 </div>
 );
+}
 
-} else if (currentScreen === 'investment-details') {
-    return (
+if (currentScreen === 'investment-details') {
+  return (
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="px-6 py-4 text-center shadow-sm" style={{ backgroundColor: '#046BF4' }}>

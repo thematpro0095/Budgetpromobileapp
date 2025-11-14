@@ -1135,7 +1135,7 @@ data.push({
   // 🟦 DASHBOARD SCREEN - Mobile First (375px optimized)
   if (currentScreen === 'dashboard') {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className={`min-h-screen ${themes[theme].background}`}>
         {/* Header - Mobile First */}
         <div className="px-4 py-4 shadow-sm" style={{ backgroundColor: '#046BF4' }}>
           <div className="flex items-center justify-between">

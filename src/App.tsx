@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend, Pie } from 'recharts';
 const logoDefinitiva = "/Logo.png";
-const [theme, setTheme] = useState<"light" | "dark">("light");
+
 
 type Screen = 'splash' | 'login' | 'signup' | 'forgot-password' | 'reset-password' | 'dashboard' | 'investment-details' | 'investment-purchase' | 'investment-result';
 type IconType = 'coffee' | 'car' | 'home' | 'shopping' | 'smartphone';
@@ -213,7 +213,8 @@ const [expenses, setExpenses] = useState<Expense[]>([]);
 
   // New state for interactive charts
   const [selectedPieSlice, setSelectedPieSlice] = useState<string | null>(null);
-
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  
   // Auto-navigate from splash to login after 10 seconds
   useEffect(() => {
     if (currentScreen === 'splash') {

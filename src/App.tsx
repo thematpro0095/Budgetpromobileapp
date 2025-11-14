@@ -2008,15 +2008,16 @@ data.push({
           </PieChart>
         </ResponsiveContainer>
       </div>
-     </CardContent>
-    </Card>
+    </CardContent>
+  </Card>
+</TabsContent>
 
-          </TabsContent>
-        </Tabs>
-      </div>
-    );
-  }
-          
+</Tabs>
+
+</div> 
+);
+}
+      
 
   if (currentScreen === 'investment-details') {
     return (

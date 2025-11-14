@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { themes } from "./theme";
 import { motion } from 'motion/react';
 import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
@@ -40,6 +41,7 @@ import {
 } from 'lucide-react';
 import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend, Pie } from 'recharts';
 const logoDefinitiva = "/Logo.png";
+const [theme, setTheme] = useState<"light" | "dark">("light");
 
 type Screen = 'splash' | 'login' | 'signup' | 'forgot-password' | 'reset-password' | 'dashboard' | 'investment-details' | 'investment-purchase' | 'investment-result';
 type IconType = 'coffee' | 'car' | 'home' | 'shopping' | 'smartphone';

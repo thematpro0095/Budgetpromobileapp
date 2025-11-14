@@ -1141,7 +1141,7 @@ data.push({
   <img
     src={logoDefinitiva}
     alt="BudgetPro"
-    className="w-20 h-20 mx-auto object-contain"
+    className={themes[theme].header}
   />
   <h1 className="text-white text-lg">BudgetPro</h1>
 </div>

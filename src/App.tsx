@@ -2026,28 +2026,55 @@ data.push({
     return (
 
 
-      <div className={`min-h-screen ${themes[theme].background}`}>
-        {/* Header */}
-        <div className="px-6 py-4 text-center shadow-sm" style={{ backgroundColor: '#046BF4' }}>
-          <img 
-            src={logoDefinitiva} 
-            alt="BudgetPro" 
-            className="w-20 h-20 mx-auto object-contain"
-          />
-          <h1 className="text-white text-lg">BudgetPro</h1>
-        </div>
+     <div className={`min-h-screen transition-all duration-300 ${themes[theme].background}`}>
+  {/* Header */}
+  <div
+    className="px-6 py-4 text-center shadow-sm relative transition-all duration-300"
+    style={{ backgroundColor: theme === "light" ? "#046BF4" : "#0F172A" }}
+  >
 
-        <div className="px-4 py-6">
-          {/* Back Button */}
-          <Button
-            onClick={() => setCurrentScreen('dashboard')}
-            variant="outline"
-            className="mb-4 rounded-xl"
-            style={{ borderColor: '#046BF4', color: '#046BF4' }}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
+    {/* BOTÃO DARK MODE */}
+    <button
+      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+      className="
+        absolute top-4 right-4 
+        p-2 rounded-full shadow-md 
+        bg-white dark:bg-gray-800 
+        hover:scale-110 transition-all duration-300
+      "
+    >
+      {theme === "light" ? (
+        <span className="text-yellow-500 text-xl">🌙</span>
+      ) : (
+        <span className="text-yellow-300 text-xl">☀️</span>
+      )}
+    </button>
+
+    <img 
+      src={logoDefinitiva} 
+      alt="BudgetPro" 
+      className="w-20 h-20 mx-auto object-contain transition-all duration-300"
+    />
+
+    <h1 className="text-white text-lg transition-all duration-300">
+      BudgetPro
+    </h1>
+  </div>
+
+  {/* MAIN CONTENT AREA */}
+  <div className="px-4 py-6 transition-all duration-300">
+    <Button
+      onClick={() => setCurrentScreen('dashboard')}
+      variant="outline"
+      className="mb-4 rounded-xl transition-all duration-300"
+      style={{
+        borderColor: theme === "light" ? "#046BF4" : "#64748B",
+        color: theme === "light" ? "#046BF4" : "#E2E8F0"
+      }}
+    >
+      <ArrowLeft className="w-4 h-4 mr-2" />
+      Voltar
+    </Button>
 
           {selectedInvestment && (
             <div className="space-y-4">

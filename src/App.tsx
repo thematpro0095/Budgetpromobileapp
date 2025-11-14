@@ -1169,7 +1169,8 @@ if (currentScreen === 'dashboard') {
     </button>
 
   </div>
-
+  );
+}
             
             {/* Quick info - Mobile */}
             <div className="text-right text-white">

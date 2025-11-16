@@ -1,60 +1,79 @@
-import React, { useState, useEffect } from 'react';
-import { themes } from "./theme";
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Input } from './components/ui/input';
-import { Button } from './components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
-import { Label } from './components/ui/label';
-import { Alert, AlertDescription } from './components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
-import { Progress } from './components/ui/progress';
-import { 
-  PlusCircle, 
-  Trash2, 
-  DollarSign, 
-  ShoppingCart, 
-  Car, 
-  Coffee, 
-  Home, 
+import {
+  Input,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Label,
+  Alert,
+  AlertDescription,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Progress
+} from './components/ui'; // assume you have an index that exports these; otherwise import individually
+import {
+  PlusCircle,
+  Trash2,
+  DollarSign,
+  ShoppingCart,
+  Car,
+  Coffee,
+  Home,
   Smartphone,
   Mail,
   Lock,
   User,
-  Calendar,
   FileText,
   CreditCard,
   TrendingUp,
   TrendingDown,
   Brain,
   AlertTriangle,
-  ArrowUpRight,
-  ArrowDownRight,
-  BarChart3,
-  PieChart,
   ArrowLeft,
   CheckCircle,
-  XCircle,
-  Building,
-  Zap,
-  Coins,
-  Rocket
+  PieChart as LucidePie
 } from 'lucide-react';
-import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend, Pie } from 'recharts';
-const logoDefinitiva = "/Logo.png";
 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis
+} from 'recharts';
 
-type Screen = 'splash' | 'login' | 'signup' | 'forgot-password' | 'reset-password' | 'dashboard' | 'investment-details' | 'investment-purchase' | 'investment-result';
+import logoDefinitiva from './assets/logo.png'; // ajuste se for outro nome
+import { themes } from './theme'; // your theme.ts (you already have)
+
+// --- Types
+type Screen =
+  | 'splash'
+  | 'login'
+  | 'signup'
+  | 'forgot-password'
+  | 'dashboard'
+  | 'investment-details'
+  | 'investment-purchase'
+  | 'investment-result';
+
 type IconType = 'coffee' | 'car' | 'home' | 'shopping' | 'smartphone';
-type RiskLevel = 'low' | 'medium' | 'high';
-type InvestmentStatus = 'available' | 'purchased' | 'completed';
-type PaymentMethod = 'salary' | 'credit';
 
 interface Expense {
   id: string;
   category: string;
   amount: number;
   iconType: IconType;
-  paymentMethod: PaymentMethod; // 'salary' para gastos do salário, 'credit' para cartão
+  paymentMethod: 'salary' | 'credit';
 }
 
 interface Investment {
@@ -62,30 +81,19 @@ interface Investment {
   name: string;
   type: string;
   description: string;
-  riskLevel: RiskLevel;
+  riskLevel: 'low' | 'medium' | 'high';
   expectedReturn: number;
   minInvestment: number;
   maxInvestment: number;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  historicalData: { month: string; value: number }[];
-  status: InvestmentStatus;
+  icon?: any;
+  color?: string;
+  historicalData?: { month: string; value: number }[];
+  status?: 'available' | 'purchased' | 'completed';
   purchaseAmount?: number;
-  purchaseDate?: Date;
-  currentValue?: number;
   profitLoss?: number;
 }
 
-// Icon mapping to prevent recreation on every render
-const iconMap = {
-  coffee: Coffee,
-  car: Car,
-  home: Home,
-  shopping: ShoppingCart,
-  smartphone: Smartphone,
-};
-
-// Mock investments data
+// --- Mock data
 const MOCK_INVESTMENTS: Investment[] = [
   {
     id: 'tech-nova',
@@ -96,36 +104,12 @@ const MOCK_INVESTMENTS: Investment[] = [
     expectedReturn: 10,
     minInvestment: 100,
     maxInvestment: 5000,
-    icon: Zap,
+    icon: TrendingUp,
     color: '#3B82F6',
     historicalData: [
       { month: 'Jan', value: 100 },
       { month: 'Fev', value: 105 },
-      { month: 'Mar', value: 108 },
-      { month: 'Abr', value: 112 },
-      { month: 'Mai', value: 110 },
-      { month: 'Jun', value: 115 }
-    ],
-    status: 'available'
-  },
-  {
-    id: 'coin-x',
-    name: 'CoinX',
-    type: 'Criptomoeda',
-    description: 'Moeda digital emergente',
-    riskLevel: 'high',
-    expectedReturn: 30,
-    minInvestment: 50,
-    maxInvestment: 3000,
-    icon: Coins,
-    color: '#F59E0B',
-    historicalData: [
-      { month: 'Jan', value: 100 },
-      { month: 'Fev', value: 120 },
-      { month: 'Mar', value: 95 },
-      { month: 'Abr', value: 140 },
-      { month: 'Mai', value: 125 },
-      { month: 'Jun', value: 135 }
+      { month: 'Mar', value: 108 }
     ],
     status: 'available'
   },
@@ -138,2114 +122,625 @@ const MOCK_INVESTMENTS: Investment[] = [
     expectedReturn: 5,
     minInvestment: 200,
     maxInvestment: 10000,
-    icon: Building,
+    icon: LucidePie,
     color: '#10B981',
     historicalData: [
       { month: 'Jan', value: 100 },
       { month: 'Fev', value: 101 },
-      { month: 'Mar', value: 103 },
-      { month: 'Abr', value: 104 },
-      { month: 'Mai', value: 105 },
-      { month: 'Jun', value: 106 }
-    ],
-    status: 'available'
-  },
-  {
-    id: 'neo-future',
-    name: 'NeoFuture',
-    type: 'Startup',
-    description: 'Startup de energia renovável',
-    riskLevel: 'high',
-    expectedReturn: 50,
-    minInvestment: 500,
-    maxInvestment: 15000,
-    icon: Rocket,
-    color: '#8B5CF6',
-    historicalData: [
-      { month: 'Jan', value: 100 },
-      { month: 'Fev', value: 90 },
-      { month: 'Mar', value: 130 },
-      { month: 'Abr', value: 110 },
-      { month: 'Mai', value: 160 },
-      { month: 'Jun', value: 145 }
+      { month: 'Mar', value: 103 }
     ],
     status: 'available'
   }
 ];
 
-export default function App() {
+// Simple icon map for expense items
+const iconMap: Record<IconType, any> = {
+  coffee: Coffee,
+  car: Car,
+  home: Home,
+  shopping: ShoppingCart,
+  smartphone: Smartphone
+};
+
+// small utility for id
+const makeId = () => Math.random().toString(36).slice(2, 9);
+
+// --- Small components
+const ProgressRing: React.FC<{ percentage: number; size?: number }> = ({ percentage, size = 80 }) => {
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <svg width={size} height={size} className="inline-block">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        stroke="#e5e7eb"
+        strokeWidth={strokeWidth}
+        fill="transparent"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        stroke="#046BF4"
+        strokeWidth={strokeWidth}
+        fill="transparent"
+        strokeDasharray={circumference}
+        strokeDashoffset={strokeDashoffset}
+        strokeLinecap="round"
+      />
+      <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize={14} fill="#111">
+        {Math.round(percentage)}%
+      </text>
+    </svg>
+  );
+};
+
+// --- App
+export default function App(): JSX.Element {
+  // screens & auth-ish
   const [currentScreen, setCurrentScreen] = useState<Screen>('splash');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [cpf, setCpf] = useState('');
-  const [resetEmail, setResetEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [salary, setSalary] = useState(0);
-  const [creditLimit, setCreditLimit] = useState(0);
-  
-  // New financial control states
-  const [salaryUsed, setSalaryUsed] = useState(0);
-  const [creditUsed, setCreditUsed] = useState(0);
-  const [bankDebt, setBankDebt] = useState(0);
-  
-  // Separate expenses for salary and credit card
-const [expenses, setExpenses] = useState<Expense[]>([]);
-  
-  // Credit card bill payment
-  const [creditBillAmount, setCreditBillAmount] = useState(0); // Total amount spent on credit card
-  const [billPaymentAmount, setBillPaymentAmount] = useState('');
-  const [newCategory, setNewCategory] = useState('');
-  const [newAmount, setNewAmount] = useState('');
-  const [editingSalary, setEditingSalary] = useState(false);
-  const [editingCredit, setEditingCredit] = useState(false);
-  const [tempSalary, setTempSalary] = useState(salary.toString());
-  const [tempCredit, setTempCredit] = useState(creditLimit.toString());
 
-  // Investment states
+  // finances
+  const [salary, setSalary] = useState<number>(0);
+  const [creditLimit, setCreditLimit] = useState<number>(0);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [newAmount, setNewAmount] = useState<number | ''>('');
+  const [newIcon, setNewIcon] = useState<IconType>('coffee');
+
+  // credit/fatura
+  const [creditBill, setCreditBill] = useState(0);
+  const [creditBillAmount, setCreditBillAmount] = useState(0);
+  const [billPaymentAmount, setBillPaymentAmount] = useState('');
+
+  // investments
   const [investments, setInvestments] = useState<Investment[]>(MOCK_INVESTMENTS);
   const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
-  const [investmentAmount, setInvestmentAmount] = useState('');
-  const [purchaseConfirmed, setPurchaseConfirmed] = useState(false);
-  const [showInvestmentResult, setShowInvestmentResult] = useState(false);
 
-  // New state for interactive charts
-  const [selectedPieSlice, setSelectedPieSlice] = useState<string | null>(null);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  
-  // Auto-navigate from splash to login after 10 seconds
+  // UI
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // derived
+  const salaryExpenses = expenses
+    .filter((e) => e.paymentMethod === 'salary')
+    .reduce((s, e) => s + e.amount, 0);
+
+  const creditExpenses = expenses
+    .filter((e) => e.paymentMethod === 'credit')
+    .reduce((s, e) => s + e.amount, 0);
+
+  const remainingSalary = Math.max(0, salary - salaryExpenses - bankDebtCalculator());
+  function bankDebtCalculator() {
+    // simple placeholder, if needed change logic
+    return 0;
+  }
+
+  const availableCredit = Math.max(0, creditLimit - creditExpenses);
+
+  // percentages
+  const expensePercentage = salary > 0 ? Math.min(100, (salaryExpenses / salary) * 100) : 0;
+  const creditPercentage = creditLimit > 0 ? Math.min(100, (creditExpenses / creditLimit) * 100) : 0;
+
+  // monthly data (just sample dynamic)
+  const totalExpenses = salaryExpenses + creditExpenses;
+  const monthlyData = useMemo(
+    () => [
+      { month: 'Set', receitas: salary, gastos: totalExpenses, investimentos: 0 },
+      { month: 'Out', receitas: salary, gastos: totalExpenses, investimentos: 0 },
+      { month: 'Nov', receitas: salary, gastos: totalExpenses, investimentos: 0 }
+    ],
+    [salary, totalExpenses]
+  );
+
+  // invest distribution for pie
+  const investmentData = investments.map((inv, idx) => ({
+    name: inv.name,
+    value: Math.round((inv.minInvestment ?? 100) / (idx + 1))
+  }));
+
+  // effects
   useEffect(() => {
     if (currentScreen === 'splash') {
-      const timer = setTimeout(() => {
-        setCurrentScreen('login');
-      }, 10000);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setCurrentScreen('login'), 3500);
+      return () => clearTimeout(t);
     }
   }, [currentScreen]);
 
-  // New financial calculations - Separated by payment method
-  const salaryExpenses = React.useMemo(() => 
-    expenses.filter(e => e.paymentMethod === 'salary').reduce((sum, expense) => sum + expense.amount, 0), 
-    [expenses]
-  );
-  
-  const creditExpenses = React.useMemo(() => 
-    expenses.filter(e => e.paymentMethod === 'credit').reduce((sum, expense) => sum + expense.amount, 0), 
-    [expenses]
-  );
-  
-  const totalExpenses = React.useMemo(() => salaryExpenses + creditExpenses, [salaryExpenses, creditExpenses]);
-
-  // Calculate financial distribution
-  const { remainingSalary, availableCredit, totalDebt, creditBill } = React.useMemo(() => {
-    const currentSalaryUsed = salaryExpenses + creditBillAmount; // Salary used includes bill payments
-    const currentCreditBill = creditExpenses; // Bill amount is credit expenses minus payments
-    const currentCreditUsed = currentCreditBill; // Credit used is the bill amount
-    const currentDebt = Math.max(0, currentCreditUsed - creditLimit); // Debt if exceeds credit limit
-    
-    return {
-      remainingSalary: salary - currentSalaryUsed,
-      availableCredit: creditLimit - currentCreditUsed,
-      totalDebt: currentDebt,
-      creditBill: currentCreditBill
+  // --- handlers
+  const addExpense = (method: 'salary' | 'credit') => {
+    if (!newCategory || !newAmount) return;
+    const e: Expense = {
+      id: makeId(),
+      category: newCategory,
+      amount: Number(newAmount),
+      iconType: newIcon,
+      paymentMethod: method
     };
-  }, [salaryExpenses, creditExpenses, salary, creditLimit, creditBillAmount]);
-
-  const isLowMoney = React.useMemo(() => 
-    remainingSalary < salary * 0.2 || (creditBill > creditLimit * 0.8), 
-    [remainingSalary, salary, creditBill, creditLimit]
-  );
-
-  // Chart data calculations with new financial structure
-  const expensePercentage = React.useMemo(() => 
-    Math.min(((salaryExpenses / salary) * 100), 100), [salaryExpenses, salary]
-  );
-  
-  const creditPercentage = React.useMemo(() => 
-    Math.min(((creditExpenses / creditLimit) * 100), 100), [creditExpenses, creditLimit]
-  );
-
-  // New financial breakdown for charts
-  const financialBreakdown = React.useMemo(() => {
-    const salaryUsedAmount = salaryExpenses + creditBillAmount;
-    const creditUsedAmount = creditExpenses;
-    const debtAmount = Math.max(0, creditExpenses - creditLimit);
-    
-    return {
-      salaryUsed: salaryUsedAmount,
-      creditUsed: creditUsedAmount,
-      debt: debtAmount,
-      total: totalExpenses
-    };
-  }, [salaryExpenses, creditExpenses, creditBillAmount, salary, creditLimit, totalExpenses]);
-
-  // Financial notification effects
-  useEffect(() => {
-    if (remainingSalary <= 0) {
-      // Notification removed - user controls payment method manually now
+    setExpenses((prev) => [e, ...prev]);
+    setNewCategory('');
+    setNewAmount('');
+    // if credit, add to credit bill as well
+    if (method === 'credit') {
+      setCreditBill((b) => b + e.amount);
     }
-    
-    if (financialBreakdown.debt > 0) {
-      alert(`🚨 Você ultrapassou o limite do cartão. Agora está devendo ao banco R$ ${financialBreakdown.debt.toFixed(2)}!`);
-    }
-    
-    if (creditBill > creditLimit * 0.9) {
-      // High credit usage warning
-    }
-  }, [financialBreakdown, salary, remainingSalary, creditBill, creditLimit]);
-
-  // Progress ring component mobile-first
-  const ProgressRing = ({ 
-    percentage, 
-    size = 100, 
-    strokeWidth = 6, 
-    color = '#046BF4' 
-  }: { 
-    percentage: number; 
-    size?: number; 
-    strokeWidth?: number; 
-    color?: string;
-  }) => {
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const strokeDasharray = `${circumference} ${circumference}`;
-    const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-    return (
-      <div className="relative inline-flex items-center justify-center">
-        <svg width={size} height={size} className="transform -rotate-90">
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#e5e7eb"
-            strokeWidth={strokeWidth}
-            fill="transparent"
-          />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            fill="transparent"
-            strokeDasharray={strokeDasharray}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            className="transition-all duration-1000 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-sm font-semibold" style={{ color }}>
-            {Math.round(percentage)}%
-          </span>
-        </div>
-      </div>
-    );
   };
 
-  // Simple "server" simulation using localStorage
-  const handleLogin = React.useCallback(() => {
-    if (!email || !password) {
-      alert('Por favor, preencha todos os campos.');
-      return;
+  const removeExpense = (id: string) => {
+    const toRemove = expenses.find((x) => x.id === id);
+    if (!toRemove) return;
+    setExpenses((prev) => prev.filter((p) => p.id !== id));
+    if (toRemove.paymentMethod === 'credit') {
+      setCreditBill((b) => Math.max(0, b - toRemove.amount));
     }
+  };
 
-    const users = JSON.parse(localStorage.getItem('budgetProUsers') || '[]');
-    const user = users.find((u: any) => u.email === email && u.password === password);
-    
-    if (user) {
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      setCurrentScreen('dashboard');
-    } else {
-      alert('Email ou senha incorretos. Verifique seus dados ou crie uma conta.');
-    }
-  }, [email, password]);
-
-  const handleSignup = React.useCallback(() => {
-    if (!name || !email || !password) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      alert('As senhas não coincidem.');
-      return;
-    }
-
-    if (password.length < 6) {
-      alert('A senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
-
-    const users = JSON.parse(localStorage.getItem('budgetProUsers') || '[]');
-    
-    // Check if email already exists
-    if (users.some((u: any) => u.email === email)) {
-      alert('Este email já está cadastrado. Tente fazer login.');
-      return;
-    }
-
-    // Save new user
-    const newUser = { id: Date.now(), name, email, password, cpf };
-    users.push(newUser);
-    localStorage.setItem('budgetProUsers', JSON.stringify(users));
-    
-    // Clear form and go back to login
-    setName('');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setCpf('');
-    
-    alert('Conta criada com sucesso! Faça login para continuar.');
-    setCurrentScreen('login');
-  }, [name, email, password, confirmPassword, cpf]);
-
-  const handleForgotPassword = React.useCallback(() => {
-    if (!resetEmail) {
-      alert('Por favor, digite seu email.');
-      return;
-    }
-
-    const users = JSON.parse(localStorage.getItem('budgetProUsers') || '[]');
-    const user = users.find((u: any) => u.email === resetEmail);
-    
-    if (user) {
-      // Store email for password reset
-      localStorage.setItem('resetEmail', resetEmail);
-      alert('Link de redefinição enviado para seu email! (Simulação)');
-      setCurrentScreen('reset-password');
-    } else {
-      alert('Email não encontrado em nossa base de dados.');
-    }
-  }, [resetEmail]);
-
-  const handleResetPassword = React.useCallback(() => {
-    if (!newPassword || !confirmNewPassword) {
-      alert('Por favor, preencha todos os campos.');
-      return;
-    }
-
-    if (newPassword !== confirmNewPassword) {
-      alert('As senhas não coincidem.');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      alert('A senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
-
-    const email = localStorage.getItem('resetEmail');
-    if (!email) {
-      alert('Erro: sessão expirada.');
-      setCurrentScreen('login');
-      return;
-    }
-
-    const users = JSON.parse(localStorage.getItem('budgetProUsers') || '[]');
-    const userIndex = users.findIndex((u: any) => u.email === email);
-    
-    if (userIndex !== -1) {
-      users[userIndex].password = newPassword;
-      localStorage.setItem('budgetProUsers', JSON.stringify(users));
-      localStorage.removeItem('resetEmail');
-      
-      setNewPassword('');
-      setConfirmNewPassword('');
-      setResetEmail('');
-      
-      alert('Senha alterada com sucesso! Faça login com sua nova senha.');
-      setCurrentScreen('login');
-    } else {
-      alert('Erro: usuário não encontrado.');
-      setCurrentScreen('login');
-    }
-  }, [newPassword, confirmNewPassword]);
-
-  const addExpense = React.useCallback((paymentMethod: PaymentMethod) => {
-    if (newCategory && newAmount) {
-      const iconTypes: IconType[] = ['shopping', 'smartphone', 'coffee'];
-      const randomIconType = iconTypes[Math.floor(Math.random() * iconTypes.length)];
-      
-      setExpenses(prev => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          category: newCategory,
-          amount: parseFloat(newAmount),
-          iconType: randomIconType,
-          paymentMethod: paymentMethod
-        }
-      ]);
-      setNewCategory('');
-      setNewAmount('');
-    }
-  }, [newCategory, newAmount]);
-  
-  // Function to pay credit card bill
-  const payCreditBill = React.useCallback(() => {
-    const paymentAmount = parseFloat(billPaymentAmount);
-    
-    if (!billPaymentAmount || paymentAmount <= 0) {
-      alert('Digite um valor válido para o pagamento.');
-      return;
-    }
-    
-    if (paymentAmount > creditBill) {
-      alert(`O valor do pagamento não pode ser maior que a fatura (R$ ${creditBill.toFixed(2)}).`);
-      return;
-    }
-    
-    if (paymentAmount > remainingSalary) {
-      alert(`Você não tem saldo suficiente no salário (R$ ${remainingSalary.toFixed(2)}).`);
-      return;
-    }
-    
-    // Update credit bill amount paid
-    setCreditBillAmount(prev => prev + paymentAmount);
-    setBillPaymentAmount('');
-    
-    alert(`✅ Pagamento de R$ ${paymentAmount.toFixed(2)} realizado com sucesso!`);
-  }, [billPaymentAmount, creditBill, remainingSalary]);
-
-  const removeExpense = React.useCallback((id: string) => {
-    setExpenses(prev => prev.filter(expense => expense.id !== id));
-  }, []);
-
-  const updateSalary = React.useCallback(() => {
-    setSalary(parseFloat(tempSalary) || 0);
-    setEditingSalary(false);
-  }, [tempSalary]);
-
-  const updateCredit = React.useCallback(() => {
-    setCreditLimit(parseFloat(tempCredit) || 0);
-    setEditingCredit(false);
-  }, [tempCredit]);
-
-  // Investment functions
-  const selectInvestment = React.useCallback((investment: Investment) => {
-    setSelectedInvestment(investment);
+  const selectInvestment = (inv: Investment) => {
+    setSelectedInvestment(inv);
     setCurrentScreen('investment-details');
-  }, []);
-
-  const confirmInvestmentPurchase = React.useCallback(() => {
-    if (!selectedInvestment || !investmentAmount) {
-      alert('Dados incompletos para o investimento.');
-      return;
-    }
-
-    const amount = parseFloat(investmentAmount);
-    if (amount < selectedInvestment.minInvestment || amount > selectedInvestment.maxInvestment) {
-      alert(`Valor deve estar entre R$ ${selectedInvestment.minInvestment} e R$ ${selectedInvestment.maxInvestment}.`);
-      return;
-    }
-
-    if (amount > remainingSalary + availableCredit) {
-      alert('Saldo insuficiente para este investimento.');
-      return;
-    }
-
-    // Simulate investment result (random gain/loss within expected range)
-    const variationFactor = (Math.random() * 2 - 1); // -1 to 1
-    const returnPercentage = (selectedInvestment.expectedReturn / 100) * variationFactor * 0.5; // Half the expected range for realism
-    const finalValue = amount * (1 + returnPercentage);
-    const profitLoss = finalValue - amount;
-
-    // Add investment as expense
-    const investmentExpense: Expense = {
-      id: Date.now().toString(),
-      category: `Investimento: ${selectedInvestment.name}`,
-      amount: amount,
-      iconType: 'shopping'
-    };
-
-    setExpenses(prev => [...prev, investmentExpense]);
-
-    // Update investment status
-    setInvestments(prev => prev.map(inv => 
-      inv.id === selectedInvestment.id 
-        ? {
-            ...inv,
-            status: 'purchased' as InvestmentStatus,
-            purchaseAmount: amount,
-            purchaseDate: new Date(),
-            currentValue: finalValue,
-            profitLoss: profitLoss
-          }
-        : inv
-    ));
-
-    setInvestmentAmount('');
-    setPurchaseConfirmed(false);
-    setCurrentScreen('investment-result');
-    
-    // Show result after brief delay
-    setTimeout(() => setShowInvestmentResult(true), 1000);
-  }, [selectedInvestment, investmentAmount, remainingSalary, availableCredit]);
-
-  const getRiskColor = (risk: RiskLevel) => {
-    switch (risk) {
-      case 'low': return '#10B981';
-      case 'medium': return '#F59E0B';
-      case 'high': return '#EF4444';
-      default: return '#6B7280';
-    }
   };
 
-  const getRiskLabel = (risk: RiskLevel) => {
-    switch (risk) {
-      case 'low': return 'Baixo';
-      case 'medium': return 'Médio';
-      case 'high': return 'Alto';
-      default: return 'Indefinido';
-    }
+  const payCreditBill = () => {
+    const toPay = parseFloat(billPaymentAmount || '0');
+    if (isNaN(toPay) || toPay <= 0) return;
+    setCreditBillAmount((p) => p + toPay);
+    setBillPaymentAmount('');
+    // pay from salary: subtract from salary (simulate)
+    setSalary((s) => Math.max(0, s - toPay));
   };
 
-  // Pie chart data with colors - SALARY expenses
-  const salaryPieChartData = React.useMemo(() => {
-    const colors = ['#046BF4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
-    const salaryExpensesList = expenses.filter(e => e.paymentMethod === 'salary');
-    return salaryExpensesList.map((expense, index) => ({
-      name: expense.category,
-      value: expense.amount,
-      color: colors[index % colors.length]
-    }));
-  }, [expenses]);
-  
-  // Pie chart data with colors - CREDIT expenses
-  const creditPieChartData = React.useMemo(() => {
-    const colors = ['#8B5CF6', '#EC4899', '#F59E0B', '#EF4444', '#06B6D4', '#10B981'];
-    const creditExpensesList = expenses.filter(e => e.paymentMethod === 'credit');
-    return creditExpensesList.map((expense, index) => ({
-      name: expense.category,
-      value: expense.amount,
-      color: colors[index % colors.length]
-    }));
-  }, [expenses]);
+  // --- Small helpers for risk label
+  const getRiskLabel = (r: Investment['riskLevel']) =>
+    r === 'low' ? 'Baixo' : r === 'medium' ? 'Médio' : 'Alto';
 
-// Enhanced monthly data with real-time saving
-const [monthlyData, setMonthlyData] = useState(() => {
-  const saved = localStorage.getItem("monthlyData");
-  return saved ? JSON.parse(saved) : [];
-});
+  const getRiskColor = (r: Investment['riskLevel']) =>
+    r === 'low' ? '#10B981' : r === 'medium' ? '#F59E0B' : '#EF4444';
 
-// Atualiza o gráfico sempre que mudar o salário ou gastos
-useEffect(() => {
-  const currentMonth = new Date().toLocaleString("pt-BR", { month: "short" }); // ex: "nov"
-  const existingMonth = monthlyData.find((m) => m.month === currentMonth);
-
-  let updated;
-  if (existingMonth) {
-    updated = monthlyData.map((m) =>
-      m.month === currentMonth
-        ? { ...m, receitas: salary, gastos: totalExpenses, investimentos: 0 }
-        : m
-    );
-  } else {
-    updated = [
-      ...monthlyData,
-      { month: currentMonth, receitas: salary, gastos: totalExpenses, investimentos: 0 },
-    ];
-  }
-
-  setMonthlyData(updated);
-  localStorage.setItem("monthlyData", JSON.stringify(updated));
-}, [salary, totalExpenses]);
-
-  // 🔵 1. Gráfico de Pizza (Distribuição de Recursos) - DATA
-  const financialDistributionPieData = React.useMemo(() => {
-    const data = [];
-    
-// Salário disponível (azul ou vermelho se negativo)
-const availableSalary = salary - salaryUsed;
-
-data.push({
-  name: availableSalary >= 0 ? 'Salário Disponível' : 'Saldo Negativo',
-  value: Math.abs(availableSalary),
-  color: availableSalary >= 0 ? '#046BF4' : '#FF4C4C', // Azul se positivo, vermelho se negativo
-  percentage: ((Math.abs(availableSalary) / (salary + creditLimit)) * 100).toFixed(1)
-});
-
-    
-    // Dívida bancária (vermelho)
-    if (totalDebt > 0) {
-      data.push({
-        name: 'Dívida Bancária',
-        value: totalDebt,
-        color: '#EF4444', // Vermelho
-        percentage: ((totalDebt / (salary + creditLimit)) * 100).toFixed(1)
-      });
-    }
-    
-    // Cartão usado (roxo)
-    if (financialBreakdown.creditUsed > 0) {
-      data.push({
-        name: 'Cartão Usado',
-        value: financialBreakdown.creditUsed,
-        color: '#8B5CF6', // Roxo
-        percentage: ((financialBreakdown.creditUsed / (salary + creditLimit)) * 100).toFixed(1)
-      });
-    }
-    
-    // Salário usado (verde)
-    if (financialBreakdown.salaryUsed > 0) {
-      data.push({
-        name: 'Salário Usado',
-        value: financialBreakdown.salaryUsed,
-        color: '#10B981', // Verde
-        percentage: ((financialBreakdown.salaryUsed / (salary + creditLimit)) * 100).toFixed(1)
-      });
-    }
-    
-    // Cartão disponível (azul claro)
-    if (availableCredit > 0) {
-      data.push({
-        name: 'Cartão Disponível',
-        value: availableCredit,
-        color: '#06B6D4', // Azul claro
-        percentage: ((availableCredit / (salary + creditLimit)) * 100).toFixed(1)
-      });
-    }
-    
-    return data;
-  }, [remainingSalary, totalDebt, financialBreakdown, availableCredit, salary, creditLimit]);
-
-  // Função para lidar com clique no gráfico de pizza
-  const handlePieSliceClick = React.useCallback((data: any, index: number) => {
-    setSelectedPieSlice(selectedPieSlice === data.name ? null : data.name);
-  }, [selectedPieSlice]);
-
-  // 🟦 SPLASH SCREEN - Mobile First
+  // ---------- Renders for screens ----------
+  // 1) Splash
   if (currentScreen === 'splash') {
     return (
-      <motion.div 
-        className="min-h-screen flex flex-col items-center justify-center px-4" 
-        style={{ backgroundColor: '#046BF4' }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.6 }}
+      <motion.div
+        className={`min-h-screen flex flex-col items-center justify-center px-4 ${themes[theme].background}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
       >
-        {/* Logo - Mobile First */}
-        <div className="mb-8">
-          <img 
-            src={logoDefinitiva} 
-            alt="BudgetPro Logo" 
-            className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 object-contain"
-          />
+        <div className="mb-6">
+          <img src={logoDefinitiva} alt="BudgetPro" className="w-28 h-28 object-contain" />
         </div>
-
-        {/* Loading animation - Mobile First */}
-        <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 flex items-center justify-center">
-          {Array.from({ length: 12 }).map((_, index) => {
-            const angle = (index * 360) / 12;
-            const radian = (angle * Math.PI) / 180;
-            const radius = 28; // Fixed radius for consistency
-            const x = Math.cos(radian) * radius;
-            const y = Math.sin(radian) * radius;
-            
-            return (
-              <motion.div
-                key={index}
-                className="absolute w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-white"
-                style={{
-                  left: '50%',
-                  top: '50%',
-                  transform: `translate(${x - 6}px, ${y - 6}px)`,
-                }}
-                animate={{
-                  opacity: [0.3, 1, 0.3]
-                }}
-                transition={{
-                  duration: 1.2,
-                  repeat: Infinity,
-                  delay: index * 0.1,
-                  ease: "easeInOut"
-                }}
-              />
-            );
-          })}
+        <div className="mb-6">
+          <p className="text-white/90 text-lg">Carregando seu app financeiro...</p>
         </div>
-
-        {/* Texto de carregamento - Desktop only */}
-        <motion.div 
-          className="mt-8 text-center hidden md:block"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-        >
-          <p className="text-white/80 text-lg">Carregando seu app financeiro...</p>
-        </motion.div>
+        <div>
+          <ProgressRing percentage={25} />
+        </div>
       </motion.div>
     );
   }
 
-  // 🟦 LOGIN SCREEN - Mobile First
+  // 2) Login screen
   if (currentScreen === 'login') {
     return (
-      <motion.div 
-        className="min-h-screen"
-        style={{ background: 'linear-gradient(to bottom, #046BF4, white)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* Header - Mobile First */}
-        <div className="px-4 py-8 text-center">
-          <h1 className="text-white text-3xl md:text-4xl lg:text-5xl mb-2 font-bold">BudgetPro</h1>
-          <p className="text-white/80 text-sm md:text-base hidden sm:block">
-            Seu assistente financeiro pessoal
-          </p>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="px-4 py-4"
-        >
-          {/* Container - Mobile First (375px optimized) */}
-          <div className="max-w-sm mx-auto md:max-w-md lg:max-w-lg">
-            <div className="text-center mb-6">
-              <h2 className="text-xl md:text-2xl lg:text-3xl mb-2 text-white font-semibold">
-                Bem-vindo de volta!
-              </h2>
-              <p className="text-gray-200 text-sm md:text-base px-2">
-                Entre na sua conta para acessar suas finanças
-              </p>
-            </div>
-
-            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm rounded-2xl">
-              <CardContent className="p-5 md:p-6 space-y-4">
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="email"
-                      placeholder="Digite seu email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
-                    />
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="password"
-                      placeholder="Digite sua senha"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleLogin}
-                  className="w-full h-12 rounded-xl text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 hover:brightness-110"
-                  style={{ backgroundColor: '#046BF4' }}
-                >
-                  Entrar
-                </Button>
-
-                <div className="text-center pt-4 space-y-3">
-                  <div>
-                    <button
-                      onClick={() => setCurrentScreen('forgot-password')}
-                      className="text-sm transition-colors hover:brightness-110"
-                      style={{ color: '#046BF4' }}
-                    >
-                      <span className="underline">Esqueceu sua senha?</span>
-                    </button>
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => setCurrentScreen('signup')}
-                      className="text-sm transition-colors hover:brightness-110"
-                      style={{ color: '#046BF4' }}
-                    >
-                      Ainda não tem conta? <span className="underline">Criar conta</span>
-                    </button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </motion.div>
-      </motion.div>
-    );
-  }
-
-  // 🟦 SIGNUP SCREEN - Mobile First
-  if (currentScreen === 'signup') {
-    return (
-      <motion.div 
-        className="min-h-screen"
-        style={{ background: 'linear-gradient(135deg, #046BF4 0%, #2A9DF4 50%, white 100%)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* Header - Mobile First */}
-        <div className="px-4 py-8 text-center">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl mb-2 font-bold" style={{ color: '#046BF4' }}>BudgetPro</h1>
-          <h2 className="text-lg md:text-2xl lg:text-3xl text-gray-700 md:text-white/90 font-semibold">Criar Nova Conta</h2>
-          <p className="text-sm text-gray-600 md:text-white/80 mt-2 hidden sm:block">
-            Transforme sua relação com o dinheiro
-          </p>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="px-4 py-4"
-        >
-          {/* Container - Mobile First (375px optimized) */}
-          <div className="max-w-sm mx-auto md:max-w-md lg:max-w-lg">
-            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm rounded-2xl">
-              <CardContent className="p-5 md:p-6 space-y-4">
-                <div className="space-y-4">
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Digite seu nome completo *"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
-                    />
-                  </div>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="email"
-                      placeholder="Digite seu email *"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
-                    />
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="password"
-                      placeholder="Digite sua senha *"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
-                    />
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="password"
-                      placeholder="Confirme sua senha *"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
-                    />
-                  </div>
-                  <div className="relative">
-                    <FileText className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Digite seu CPF (opcional)"
-                      value={cpf}
-                      onChange={(e) => setCpf(e.target.value)}
-                      className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="text-xs text-gray-500 text-center bg-gray-50 p-3 rounded-xl">
-                  <span className="font-medium">* Campos obrigatórios</span>
-                </div>
-
-                <Button
-                  onClick={handleSignup}
-                  className="w-full h-12 rounded-xl text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 hover:brightness-110"
-                  style={{ backgroundColor: '#046BF4' }}
-                >
-                  Criar Minha Conta
-                </Button>
-
-                <div className="text-center pt-4">
-                  <button
-                    onClick={() => setCurrentScreen('login')}
-                    className="text-sm transition-colors hover:brightness-110"
-                    style={{ color: '#046BF4' }}
-                  >
-                    Já tem conta? <span className="underline">Voltar ao login</span>
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </motion.div>
-      </motion.div>
-    );
-  }
-
-  // 🟦 FORGOT PASSWORD SCREEN - Mobile First
-  if (currentScreen === 'forgot-password') {
-    return (
-      <motion.div 
-        className="min-h-screen bg-gray-50"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* Header - Mobile First */}
-        <div className="px-4 py-8 text-center">
-          <h1 className="text-3xl mb-2 font-bold" style={{ color: '#046BF4' }}>BudgetPro</h1>
-          <h2 className="text-xl text-gray-700">Esqueceu sua senha?</h2>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="px-4 py-4"
-        >
-          <div className="max-w-sm mx-auto">
-            <div className="text-center mb-6">
-              <p className="text-gray-600">
-                Digite seu email para receber um link de recuperação
-              </p>
-            </div>
-
-            <Card className="shadow-xl border-0 bg-white rounded-2xl">
-              <CardContent className="p-5 space-y-4">
+      <div className={`min-h-screen flex items-center justify-center px-4 py-8 ${themes[theme].background}`}>
+        <div className="max-w-sm w-full">
+          <Card className="rounded-2xl shadow-lg">
+            <CardContent className="p-6">
+              <div className="text-center mb-4">
+                <img src={logoDefinitiva} alt="BudgetPro" className="w-20 h-20 mx-auto" />
+                <h2 className="mt-2 font-semibold">BudgetPro</h2>
+              </div>
+              <div className="space-y-3">
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <Input
                     type="email"
                     placeholder="Digite seu email"
-                    value={resetEmail}
-                    onChange={(e) => setResetEmail(e.target.value)}
-                    className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
+                    value={email}
+                    onChange={(e: any) => setEmail(e.target.value)}
+                    className="pl-11 h-12 rounded-xl"
                   />
                 </div>
-
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    type="password"
+                    placeholder="Senha"
+                    value={password}
+                    onChange={(e: any) => setPassword(e.target.value)}
+                    className="pl-11 h-12 rounded-xl"
+                  />
+                </div>
                 <Button
-                  onClick={handleForgotPassword}
-                  className="w-full h-12 rounded-xl text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 hover:brightness-110"
+                  onClick={() => setCurrentScreen('dashboard')}
+                  className="w-full h-12 rounded-xl text-white"
                   style={{ backgroundColor: '#046BF4' }}
                 >
-                  Enviar Link
+                  Entrar
                 </Button>
-
-                <div className="text-center pt-4">
-                  <button
-                    onClick={() => setCurrentScreen('login')}
-                    className="text-sm transition-colors hover:brightness-110"
-                    style={{ color: '#046BF4' }}
-                  >
-                    <span className="underline">Voltar ao login</span>
+                <div className="flex justify-between text-sm mt-3">
+                  <button onClick={() => setCurrentScreen('forgot-password')} className="underline">
+                    Esqueceu a senha?
+                  </button>
+                  <button onClick={() => setCurrentScreen('signup')} className="underline">
+                    Criar conta
                   </button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </motion.div>
-      </motion.div>
-    );
-  }
-
-  // 🟦 RESET PASSWORD SCREEN - Mobile First
-  if (currentScreen === 'reset-password') {
-    return (
-      <motion.div 
-        className="min-h-screen bg-gray-50"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* Header - Mobile First */}
-        <div className="px-4 py-8 text-center">
-          <h1 className="text-3xl mb-2 font-bold" style={{ color: '#046BF4' }}>BudgetPro</h1>
-          <h2 className="text-xl text-gray-700">Redefinir Senha</h2>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="px-4 py-4"
-        >
-          <div className="max-w-sm mx-auto">
-            <div className="text-center mb-6">
-              <p className="text-gray-600">
-                Digite sua nova senha
-              </p>
-            </div>
-
-            <Card className="shadow-xl border-0 bg-white rounded-2xl">
-              <CardContent className="p-5 space-y-4">
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="password"
-                      placeholder="Nova senha"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
-                    />
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="password"
-                      placeholder="Confirmar nova senha"
-                      value={confirmNewPassword}
-                      onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      className="pl-11 h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleResetPassword}
-                  className="w-full h-12 rounded-xl text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 hover:brightness-110"
-                  style={{ backgroundColor: '#046BF4' }}
-                >
-                  Salvar Nova Senha
-                </Button>
-
-                <div className="text-center pt-4">
-                  <button
-                    onClick={() => setCurrentScreen('login')}
-                    className="text-sm transition-colors hover:brightness-110"
-                    style={{ color: '#046BF4' }}
-                  >
-                    <span className="underline">Voltar ao login</span>
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </motion.div>
-      </motion.div>
-    );
-  }
-
-  // 🟦 DASHBOARD SCREEN - Mobile First (375px optimized)
-if (currentScreen === 'dashboard') {
-  return (
-    <div className={`min-h-screen ${themes[theme].background}`}>
-      
-      {/* Header - Mobile First */}
-      <div className="px-4 py-4 shadow-sm" style={{ backgroundColor: '#046BF4' }}>
-        <div className="flex items-center justify-between">
-
-          {/* Logo + Título */}
-          <div className="flex items-center">
-            <img 
-              src={logoDefinitiva} 
-              alt="BudgetPro" 
-              className="w-12 h-12 md:w-16 md:h-16 object-contain"
-            />
-            <div className="ml-3 md:ml-4">
-              <h1 className="text-white text-lg md:text-xl font-semibold">BudgetPro</h1>
-              <p className="text-white/80 text-xs md:text-sm hidden sm:block">
-                Suas finanças
-              </p>
-            </div>
-          </div>
-
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
+    );
+  }
 
-    {/* ⭐ BOTÃO DE TEMA AQUI */}
-    <button
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="bg-white/20 px-3 py-2 rounded-xl text-white text-sm"
-    >
-      {theme === "light" ? "🌙" : "☀️"}
-    </button>
+  // 3) Signup screen (simple)
+  if (currentScreen === 'signup') {
+    return (
+      <div className={`min-h-screen flex items-center justify-center px-4 py-8 ${themes[theme].background}`}>
+        <div className="max-w-sm w-full">
+          <Card className="rounded-2xl shadow-lg">
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-3">Criar Conta</h2>
+              <div className="space-y-3">
+                <Input placeholder="Nome completo" value={name} onChange={(e: any) => setName(e.target.value)} />
+                <Input placeholder="Email" value={email} onChange={(e: any) => setEmail(e.target.value)} />
+                <Input placeholder="Senha" value={password} onChange={(e: any) => setPassword(e.target.value)} />
+                <Button onClick={() => setCurrentScreen('login')} className="w-full" style={{ backgroundColor: '#046BF4', color: 'white' }}>
+                  Criar conta
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
-  </div>
-  );
-}
-            
-            {/* Quick info - Mobile */}
-            <div className="text-right text-white">
-              <p className="text-xs text-white/80">Disponível</p>
-              <p className="text-sm font-semibold">R$ {(remainingSalary + availableCredit).toFixed(2)}</p>
+  // 4) Dashboard (main)
+  if (currentScreen === 'dashboard') {
+    return (
+      <div className={`min-h-screen ${themes[theme].background}`}>
+        {/* Header */}
+        <div className="px-4 py-4 shadow-sm" style={{ backgroundColor: '#046BF4' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <img src={logoDefinitiva} alt="BudgetPro" className="w-12 h-12 object-contain" />
+              <div className="ml-3">
+                <h1 className="text-white text-lg font-semibold">BudgetPro</h1>
+                <p className="text-white/80 text-xs hidden sm:block">Suas finanças</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="text-white text-sm mr-2">{theme === 'light' ? 'Claro' : 'Escuro'}</div>
+              <button
+                onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+                className="bg-white/20 px-3 py-2 rounded-xl text-white text-sm"
+              >
+                {theme === 'light' ? '🌙' : '☀️'}
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="px-4 py-4">
-          {/* Low Money Alert - Mobile First */}
-          {isLowMoney && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4"
-            >
-              <Alert className="border-red-200 bg-red-50 rounded-xl shadow-sm">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-700 text-sm">
-                  ⚠️ Saldo baixo! Restam R$ {remainingSalary.toFixed(2)}
-                </AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-
-          <Tabs defaultValue="overview" className="space-y-4">
-            {/* Tabs - Mobile Optimized (4 tabs now) */}
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 rounded-xl p-1 h-auto md:h-11" style={{ backgroundColor: '#f8fafc' }}>
-              <TabsTrigger 
-                value="overview" 
-                className="rounded-lg data-[state=active]:bg-[#046BF4] data-[state=active]:shadow-sm data-[state=active]:text-white hover:bg-sky-100 transition-all text-xs font-medium py-2"
-              >
-                📊 Visão Geral
-              </TabsTrigger>
-              <TabsTrigger 
-                value="boards"
-                className="rounded-lg data-[state=active]:bg-[#046BF4] data-[state=active]:shadow-sm data-[state=active]:text-white hover:bg-sky-100 transition-all text-xs font-medium py-2"
-              >
-                📋 Prancheta
-              </TabsTrigger>
-              <TabsTrigger 
-                value="payment"
-                className="rounded-lg data-[state=active]:bg-[#046BF4] data-[state=active]:shadow-sm data-[state=active]:text-white hover:bg-sky-100 transition-all text-xs font-medium py-2"
-              >
-                🧾 Pagar Fatura
-              </TabsTrigger>
-              <TabsTrigger 
-                value="ai"
-                className="rounded-lg data-[state=active]:bg-[#046BF4] data-[state=active]:shadow-sm data-[state=active]:text-white hover:bg-sky-100 transition-all text-xs font-medium py-2"
-              >
-                🤖 IA
-              </TabsTrigger>
-            </TabsList>
-
-            {/* 🔵 OVERVIEW TAB - Mobile First */}
-            <TabsContent value="overview" className="space-y-4">
-              {/* Financial Cards - Mobile Grid */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {/* Income Card - Mobile */}
-                <Card className="shadow-md border-0 rounded-xl hover:shadow-lg transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="p-2 rounded-lg bg-green-100">
-                        <ArrowUpRight className="w-4 h-4 text-green-600" />
-                      </div>
-                      <span className="text-xs text-gray-500 uppercase">Receitas</span>
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold text-green-600">R$ {salary.toFixed(2)}</p>
-                      <p className="text-xs text-gray-600">Salário mensal</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Expenses Card - Mobile */}
-                <Card className="shadow-md border-0 rounded-xl hover:shadow-lg transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="p-2 rounded-lg bg-red-100">
-                        <ArrowDownRight className="w-4 h-4 text-red-600" />
-                      </div>
-                      <span className="text-xs text-gray-500 uppercase">Gastos Salário</span>
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold text-red-600">R$ {salaryExpenses.toFixed(2)}</p>
-                      <p className="text-xs text-gray-600">Pagos com salário</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Available Card - Mobile */}
-                <Card className="shadow-md border-0 rounded-xl hover:shadow-lg transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="p-2 rounded-lg" style={{ backgroundColor: '#e0f2fe' }}>
-                        <DollarSign className="w-4 h-4" style={{ color: '#046BF4' }} />
-                      </div>
-                      <span className="text-xs text-gray-500 uppercase">Disponível</span>
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold" style={{ color: '#046BF4' }}>
-                        R$ {remainingSalary.toFixed(2)}
-                      </p>
-                      <p className="text-xs text-gray-600">Salário restante</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Credit Card - Mobile */}
-                <Card className="shadow-md border-0 rounded-xl hover:shadow-lg transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="p-2 rounded-lg bg-purple-100">
-                        <CreditCard className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <span className="text-xs text-gray-500 uppercase">Cartão</span>
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold text-purple-600">R$ {availableCredit.toFixed(2)}</p>
-                      <p className="text-xs text-gray-600">Limite livre</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Progress Summary - Mobile */}
-              <Card className="shadow-md border-0 rounded-xl mb-4">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
-                      <BarChart3 className="w-4 h-4 text-white" />
-                    </div>
-                    Resumo do Mês
-                  </CardTitle>
-                </CardHeader>
+        <div className="px-4 py-6">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="rounded-xl">
                 <CardContent>
-                  <div className="mb-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm">Você gastou {Math.round(expensePercentage)}% da sua renda</span>
-                      <span className="text-sm font-semibold">{Math.round(expensePercentage)}%</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-gray-500">Salário Total</div>
+                      <div className="font-bold text-lg">R$ {salary.toFixed(2)}</div>
                     </div>
-                    <Progress 
-                      value={expensePercentage} 
-                      className="h-3 rounded-full"
-                      style={{
-                        '--progress-background': expensePercentage > 80 ? '#EF4444' : expensePercentage > 60 ? '#F59E0B' : '#046BF4'
-                      } as React.CSSProperties}
-                    />
-                    <p className="text-xs text-gray-500 mt-2">
-                      {expensePercentage > 90 ? '🚨 Gastos muito altos!' :
-                       expensePercentage > 70 ? '⚠️ Cuidado com os gastos' :
-                       '✅ Gastos controlados'}
-                    </p>
-                  </div>
-                  
-                  {/* Progress Ring - Mobile Center */}
-                  <div className="flex justify-center mt-4">
-                    <ProgressRing 
-                      percentage={expensePercentage} 
-                      size={100}
-                      color={expensePercentage > 80 ? '#EF4444' : expensePercentage > 60 ? '#F59E0B' : '#046BF4'}
-                    />
+                    <div>
+                      <Button onClick={() => { setSalary(0); setTempStatesToZero(); }} variant="outline">Zerar</Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-            {/* Line Chart - Mobile */}
-<Card className="shadow-md border-0 rounded-xl mb-4">
-  <CardHeader className="pb-3">
-    <CardTitle className="flex items-center gap-2 text-sm">
-      <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
-        <TrendingUp className="w-4 h-4 text-white" />
-      </div>
-      Evolução dos Últimos Meses
-    </CardTitle>
-  </CardHeader>
-  <CardContent>
-    <div className="h-48">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart 
-          data={
-            selectedMonth 
-              ? monthlyData.filter((d) => d.month === selectedMonth)
-              : monthlyData
-          }
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis 
-            dataKey="month" 
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 10, fill: '#666' }}
-          />
-          <YAxis 
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 10, fill: '#666' }}
-            tickFormatter={(value) => `R$ ${value}`}
-          />
-          <Tooltip 
-            formatter={(value: any, name: string) => [
-              `R$ ${value.toFixed(2)}`,
-              name === 'receitas' ? 'Receitas' :
-              name === 'gastos' ? 'Gastos' : 'Investimentos'
-            ]}
-            labelFormatter={(label) => `Mês: ${label}`}
-            contentStyle={{ 
-              backgroundColor: 'white', 
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              fontSize: '12px'
-            }}
-          />
-          <Line 
-            type="monotone" 
-            dataKey="receitas" 
-            stroke="#10B981" 
-            strokeWidth={2}
-            dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
-            activeDot={{ r: 5, fill: '#10B981' }}
-            name="Receitas"
-          />
-          <Line 
-            type="monotone" 
-            dataKey="gastos" 
-            stroke="#EF4444" 
-            strokeWidth={2}
-            dot={{ fill: '#EF4444', strokeWidth: 2, r: 3 }}
-            activeDot={{ r: 5, fill: '#EF4444' }}
-            name="Gastos"
-          />
-          <Line 
-            type="monotone" 
-            dataKey="investimentos" 
-            stroke="#046BF4" 
-            strokeWidth={2}
-            dot={{ fill: '#046BF4', strokeWidth: 2, r: 3 }}
-            activeDot={{ r: 5, fill: '#046BF4' }}
-            name="Investimentos"
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+              <Card className="rounded-xl">
+                <CardContent>
+                  <div>
+                    <div className="text-sm text-gray-500">Total Gasto</div>
+                    <div className="font-bold text-lg">R$ {totalExpenses.toFixed(2)}</div>
+                  </div>
+                </CardContent>
+              </Card>
 
-    {/* 🔽 Novo seletor de mês */}
-    <div className="mt-4 flex justify-center">
-      <select
-        value={selectedMonth || ''}
-        onChange={(e) => setSelectedMonth(e.target.value || null)}
-        className="px-3 py-2 border rounded-lg text-sm bg-white shadow-sm"
-      >
-        <option value="">Todos os meses</option>
-        {monthlyData.map((m) => (
-          <option key={m.month} value={m.month}>{m.month}</option>
-        ))}
-      </select>
-    </div>
-  </CardContent>
-</Card>
+              <Card className="rounded-xl">
+                <CardContent>
+                  <div>
+                    <div className="text-sm text-gray-500">Disponível (salário)</div>
+                    <div className="font-bold text-lg text-blue-600">R$ {remainingSalary.toFixed(2)}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-
-                {/* Credit Card - Mobile */}
-                <Card className="shadow-md border-0 rounded-xl">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-sm">
-                      <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
-                        <CreditCard className="w-4 h-4 text-white" />
-                      </div>
-                      Limite do Cartão
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {editingCredit ? (
-                      <div className="space-y-3">
-                        <Input
-                          type="number"
-                          value={tempCredit}
-                          onChange={(e) => setTempCredit(e.target.value)}
-                          className="h-10 rounded-lg"
-                          placeholder="Digite o novo limite"
-                        />
-                        <div className="flex gap-2">
-                          <Button 
-                            onClick={updateCredit} 
-                            size="sm" 
-                            className="flex-1 rounded-lg hover:brightness-110 transition-all"
-                            style={{ backgroundColor: '#046BF4' }}
-                          >
-                            Salvar
-                          </Button>
-                          <Button 
-                            onClick={() => setEditingCredit(false)} 
-                            variant="outline"
-                            size="sm" 
-                            className="flex-1 rounded-lg"
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-3">
-                          <p className="text-xl font-semibold text-purple-600">R$ {creditLimit.toFixed(2)}</p>
-                          <p className="text-sm text-gray-500">Limite atual</p>
-                        </div>
-                        <Button
-                          onClick={() => {
-                            setEditingCredit(true);
-                            setTempCredit(creditLimit.toString());
-                          }}
-                          variant="outline"
-                          className="w-full rounded-lg border-2 hover:bg-sky-50 transition-all text-sm"
-                          style={{ borderColor: '#046BF4', color: '#046BF4' }}
-                        >
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          Modificar Limite
-                        </Button>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-             </TabsContent>
-
-            {/* 🔵 BOARDS TAB - Pranchetas lado a lado */}
-            <TabsContent value="boards" className="space-y-4">
-              {/* Header - Desktop e Mobile */}
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-800 mb-1">📋 Pranchetas de Gastos</h2>
-                <p className="text-sm text-gray-600">Gerencie seus gastos de salário e cartão de crédito</p>
-              </div>
-
-              {/* Side by Side Boards - Responsive */}
+            {/* Boards (salary & credit) */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Pranchetas</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                {/* LEFT BOARD: SALARY EXPENSES */}
-                <div className="space-y-4">
-                  {/* Summary Card - Salary */}
-                  <Card className="shadow-md border-0 rounded-xl bg-gradient-to-br from-green-50 to-blue-50">
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">💰 Salário Total</span>
-                          <span className="font-semibold text-green-600">R$ {salary.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">💸 Total Gasto</span>
-                          <span className="font-semibold text-red-600">R$ {salaryExpenses.toFixed(2)}</span>
-                        </div>
-                        <div className="h-px bg-gray-300 my-2"></div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-800">✅ Saldo Restante</span>
-                          <span className="font-bold text-lg" style={{ color: '#046BF4' }}>R$ {remainingSalary.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Progress and Charts - Salary */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card className="shadow-md border-0 rounded-xl">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xs">Uso do Orçamento</CardTitle>
-                      </CardHeader>
-                      <CardContent className="flex flex-col items-center py-2">
-                        <ProgressRing 
-                          percentage={expensePercentage} 
-                          size={80}
-                          color={expensePercentage > 80 ? '#EF4444' : expensePercentage > 60 ? '#F59E0B' : '#046BF4'}
-                        />
-                        <p className="text-xs text-gray-500 mt-2 text-center">
-                          {expensePercentage > 80 ? 'Apertado!' : 
-                           expensePercentage > 60 ? 'Atenção' : 'Controlado'}
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="shadow-md border-0 rounded-xl">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xs">Por Categoria</CardTitle>
-                      </CardHeader>
-                      <CardContent className="py-2">
-                        {salaryPieChartData.length > 0 ? (
-                          <div className="h-24">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <RechartsPieChart>
-                                <Pie
-                                  data={salaryPieChartData}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={15}
-                                  outerRadius={35}
-                                  paddingAngle={2}
-                                  dataKey="value"
-                                >
-                                  {salaryPieChartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                  ))}
-                                </Pie>
-                                <Tooltip 
-                                  formatter={(value: any) => [`R$ ${value.toFixed(2)}`, 'Valor']}
-                                />
-                              </RechartsPieChart>
-                            </ResponsiveContainer>
-                          </div>
-                        ) : (
-                          <div className="h-24 flex items-center justify-center text-gray-400 text-xs">
-                            Sem dados
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Expense Management - Salary */}
-                  <Card className="shadow-md border-0 rounded-xl">
+                {/* Salary Board */}
+                <div>
+                  <Card className="rounded-xl">
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-sm">
-                        <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
-                          <ShoppingCart className="w-4 h-4 text-white" />
-                        </div>
-                        💵 Prancheta de Gastos do Salário
-                      </CardTitle>
-                      <div className="text-xs text-gray-600">
-                        Gastos pagos com dinheiro do salário
-                      </div>
+                      <CardTitle>Prancheta - Salário</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {/* Add new expense - Salary */}
-                      <div className="space-y-3 mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                        <p className="text-xs text-gray-700 font-medium">Adicionar novo gasto</p>
-                        <Input
-                          placeholder="Nome da categoria"
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          className="h-10 rounded-lg bg-white"
-                        />
+                      <div className="space-y-3 mb-4">
+                        <Input placeholder="Categoria" value={newCategory} onChange={(e: any) => setNewCategory(e.target.value)} />
+                        <Input placeholder="Valor (R$)" type="number" value={newAmount as any} onChange={(e: any) => setNewAmount(e.target.value)} />
                         <div className="flex gap-2">
-                          <Input
-                            placeholder="Valor (R$)"
-                            type="number"
-                            value={newAmount}
-                            onChange={(e) => setNewAmount(e.target.value)}
-                            className="flex-1 h-10 rounded-lg bg-white"
-                          />
-                          <Button 
-                            onClick={() => addExpense('salary')} 
-                            className="rounded-lg px-4 h-10 hover:brightness-110 transition-all"
-                            style={{ backgroundColor: '#046BF4' }}
-                          >
-                            <PlusCircle className="w-4 h-4" />
+                          <select value={newIcon} onChange={(e: any) => setNewIcon(e.target.value)} className="rounded-lg h-10 px-2">
+                            <option value="coffee">Café</option>
+                            <option value="car">Transporte</option>
+                            <option value="home">Moradia</option>
+                            <option value="shopping">Compras</option>
+                            <option value="smartphone">Celular</option>
+                          </select>
+                          <Button onClick={() => addExpense('salary')} style={{ backgroundColor: '#046BF4', color: 'white' }}>
+                            <PlusCircle className="w-4 h-4" /> Adicionar
                           </Button>
                         </div>
                       </div>
 
-                      {/* Expenses list - Salary */}
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {expenses.filter(e => e.paymentMethod === 'salary').map((expense) => {
-                          const IconComponent = iconMap[expense.iconType];
+                      <div className="space-y-2">
+                        {expenses.filter((e) => e.paymentMethod === 'salary').map((expense) => {
+                          const Icon = iconMap[expense.iconType];
                           return (
-                            <motion.div
-                              key={expense.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm"
-                            >
+                            <div key={expense.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
                               <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg" style={{ backgroundColor: '#f1f5f9' }}>
-                                  <IconComponent className="w-4 h-4" style={{ color: '#046BF4' }} />
+                                <div className="p-2 rounded-md bg-gray-50">
+                                  <Icon className="w-5 h-5 text-blue-600" />
                                 </div>
                                 <div>
-                                  <span className="font-medium text-sm">{expense.category}</span>
-                                  <p className="text-xs text-gray-500">
-                                    {salaryExpenses > 0 ? ((expense.amount / salaryExpenses) * 100).toFixed(1) : '0'}% dos gastos
-                                  </p>
+                                  <div className="font-medium">{expense.category}</div>
+                                  <div className="text-xs text-gray-500">{((expense.amount / Math.max(1, salaryExpenses)) * 100).toFixed(1)}% dos gastos</div>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="text-right">
-                                  <span className="font-semibold text-sm">R$ {expense.amount.toFixed(2)}</span>
-                                </div>
-                                <Button
-                                  onClick={() => removeExpense(expense.id)}
-                                  variant="outline"
-                                  size="sm"
-                                  className="rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
+                                <div>R$ {expense.amount.toFixed(2)}</div>
+                                <Button variant="outline" onClick={() => removeExpense(expense.id)}><Trash2 /></Button>
                               </div>
-                            </motion.div>
+                            </div>
                           );
                         })}
-                        
-                        {/* Empty state - Salary */}
-                        {expenses.filter(e => e.paymentMethod === 'salary').length === 0 && (
-                          <div className="text-center py-8 text-gray-500">
-                            <DollarSign className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm mb-1">Nenhum gasto com salário</p>
-                            <p className="text-xs">Adicione seus gastos acima</p>
-                          </div>
+                        {expenses.filter((e) => e.paymentMethod === 'salary').length === 0 && (
+                          <div className="text-center py-6 text-gray-500">Nenhum gasto</div>
                         )}
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* RIGHT BOARD: CREDIT CARD EXPENSES */}
-                <div className="space-y-4">
-                  {/* Summary Card - Credit */}
-                  <Card className="shadow-md border-0 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50">
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">💳 Limite Total</span>
-                          <span className="font-semibold text-purple-600">R$ {creditLimit.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">💸 Valor Gasto</span>
-                          <span className="font-semibold text-red-600">R$ {creditExpenses.toFixed(2)}</span>
-                        </div>
-                        <div className="h-px bg-gray-300 my-2"></div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-800">✅ Limite Restante</span>
-                          <span className="font-bold text-lg text-purple-600">R$ {availableCredit.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Progress and Charts - Credit */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card className="shadow-md border-0 rounded-xl">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xs">Uso do Cartão</CardTitle>
-                      </CardHeader>
-                      <CardContent className="flex flex-col items-center py-2">
-                        <ProgressRing 
-                          percentage={creditPercentage} 
-                          size={80}
-                          color={creditPercentage > 80 ? '#EF4444' : creditPercentage > 60 ? '#F59E0B' : '#8B5CF6'}
-                        />
-                        <p className="text-xs text-gray-500 mt-2 text-center">
-                          {creditPercentage > 80 ? 'Quase cheio!' : 
-                           creditPercentage > 60 ? 'Cuidado' : 'Controlado'}
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="shadow-md border-0 rounded-xl">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xs">Por Categoria</CardTitle>
-                      </CardHeader>
-                      <CardContent className="py-2">
-                        {creditPieChartData.length > 0 ? (
-                          <div className="h-24">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <RechartsPieChart>
-                                <Pie
-                                  data={creditPieChartData}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={15}
-                                  outerRadius={35}
-                                  paddingAngle={2}
-                                  dataKey="value"
-                                >
-                                  {creditPieChartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                  ))}
-                                </Pie>
-                                <Tooltip 
-                                  formatter={(value: any) => [`R$ ${value.toFixed(2)}`, 'Valor']}
-                                />
-                              </RechartsPieChart>
-                            </ResponsiveContainer>
-                          </div>
-                        ) : (
-                          <div className="h-24 flex items-center justify-center text-gray-400 text-xs">
-                            Sem dados
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Expense Management - Credit */}
-                  <Card className="shadow-md border-0 rounded-xl">
+                {/* Credit Board */}
+                <div>
+                  <Card className="rounded-xl">
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-sm">
-                        <div className="p-2 rounded-lg bg-purple-500">
-                          <CreditCard className="w-4 h-4 text-white" />
-                        </div>
-                        💳 Prancheta de Gastos do Cartão
-                      </CardTitle>
-                      <div className="text-xs text-gray-600">
-                        Gastos feitos no cartão de crédito
-                      </div>
+                      <CardTitle>Prancheta - Cartão</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {/* Add new expense - Credit */}
-                      <div className="space-y-3 mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                        <p className="text-xs text-gray-700 font-medium">Adicionar novo gasto</p>
-                        <Input
-                          placeholder="Nome da categoria"
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          className="h-10 rounded-lg bg-white"
-                        />
+                      <div className="space-y-3 mb-4">
+                        <Input placeholder="Categoria" value={newCategory} onChange={(e: any) => setNewCategory(e.target.value)} />
+                        <Input placeholder="Valor (R$)" type="number" value={newAmount as any} onChange={(e: any) => setNewAmount(e.target.value)} />
                         <div className="flex gap-2">
-                          <Input
-                            placeholder="Valor (R$)"
-                            type="number"
-                            value={newAmount}
-                            onChange={(e) => setNewAmount(e.target.value)}
-                            className="flex-1 h-10 rounded-lg bg-white"
-                          />
-                          <Button 
-                            onClick={() => addExpense('credit')} 
-                            className="rounded-lg px-4 h-10 hover:brightness-110 transition-all bg-purple-600 hover:bg-purple-700"
-                          >
-                            <PlusCircle className="w-4 h-4" />
+                          <select value={newIcon} onChange={(e: any) => setNewIcon(e.target.value)} className="rounded-lg h-10 px-2">
+                            <option value="coffee">Café</option>
+                            <option value="car">Transporte</option>
+                            <option value="home">Moradia</option>
+                            <option value="shopping">Compras</option>
+                            <option value="smartphone">Celular</option>
+                          </select>
+                          <Button onClick={() => addExpense('credit')} style={{ backgroundColor: '#8B5CF6', color: 'white' }}>
+                            <PlusCircle className="w-4 h-4" /> Adicionar
                           </Button>
                         </div>
                       </div>
 
-                      {/* Expenses list - Credit */}
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {expenses.filter(e => e.paymentMethod === 'credit').map((expense) => {
-                          const IconComponent = iconMap[expense.iconType];
+                      <div className="space-y-2">
+                        {expenses.filter((e) => e.paymentMethod === 'credit').map((expense) => {
+                          const Icon = iconMap[expense.iconType];
                           return (
-                            <motion.div
-                              key={expense.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm"
-                            >
+                            <div key={expense.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
                               <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-purple-100">
-                                  <IconComponent className="w-4 h-4 text-purple-600" />
+                                <div className="p-2 rounded-md bg-gray-50">
+                                  <Icon className="w-5 h-5 text-purple-600" />
                                 </div>
                                 <div>
-                                  <span className="font-medium text-sm">{expense.category}</span>
-                                  <p className="text-xs text-gray-500">
-                                    {creditExpenses > 0 ? ((expense.amount / creditExpenses) * 100).toFixed(1) : '0'}% da fatura
-                                  </p>
+                                  <div className="font-medium">{expense.category}</div>
+                                  <div className="text-xs text-gray-500">{((expense.amount / Math.max(1, creditExpenses)) * 100).toFixed(1)}% da fatura</div>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="text-right">
-                                  <span className="font-semibold text-sm">R$ {expense.amount.toFixed(2)}</span>
-                                </div>
-                                <Button
-                                  onClick={() => removeExpense(expense.id)}
-                                  variant="outline"
-                                  size="sm"
-                                  className="rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
+                                <div>R$ {expense.amount.toFixed(2)}</div>
+                                <Button variant="outline" onClick={() => removeExpense(expense.id)}><Trash2 /></Button>
                               </div>
-                            </motion.div>
+                            </div>
                           );
                         })}
-                        
-                        {/* Empty state - Credit */}
-                        {expenses.filter(e => e.paymentMethod === 'credit').length === 0 && (
-                          <div className="text-center py-8 text-gray-500">
-                            <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm mb-1">Nenhum gasto no cartão</p>
-                            <p className="text-xs">Adicione seus gastos acima</p>
-                          </div>
+                        {expenses.filter((e) => e.paymentMethod === 'credit').length === 0 && (
+                          <div className="text-center py-6 text-gray-500">Nenhum gasto no cartão</div>
                         )}
                       </div>
                     </CardContent>
                   </Card>
                 </div>
-
               </div>
-            </TabsContent>
+            </div>
 
-            {/* 🔵 PAYMENT TAB - Mobile First */}
-            <TabsContent value="payment" className="space-y-4">
-              {/* Bill Summary Card */}
-              <Card className="shadow-md border-0 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50">
+            {/* Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="rounded-xl">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
-                      <FileText className="w-4 h-4 text-white" />
-                    </div>
-                    🧾 Fatura do Cartão de Crédito
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3 p-4 bg-white rounded-lg border-2 border-purple-200">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">💳 Valor da Fatura Atual</span>
-                      <span className="font-bold text-lg text-purple-600">R$ {creditBill.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">✅ Já Pago</span>
-                      <span className="font-semibold text-green-600">R$ {creditBillAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="h-px bg-gray-300"></div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-800">📋 Saldo Devedor</span>
-                      <span className="font-bold text-xl text-red-600">
-                        R$ {(creditBill - creditBillAmount).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {creditBill > creditBillAmount && (
-                    <>
-                      <Alert className="border-blue-200 bg-blue-50 rounded-xl">
-                        <AlertDescription className="text-blue-800 text-xs">
-                          💰 Saldo disponível no salário: <strong>R$ {remainingSalary.toFixed(2)}</strong>
-                        </AlertDescription>
-                      </Alert>
-
-                      <div className="space-y-3 p-4 bg-white rounded-lg border border-gray-200">
-                        <Label className="text-sm font-medium">Valor do Pagamento</Label>
-                        <Input
-                          type="number"
-                          placeholder="Digite o valor a pagar"
-                          value={billPaymentAmount}
-                          onChange={(e) => setBillPaymentAmount(e.target.value)}
-                          className="h-12 rounded-lg text-lg"
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => setBillPaymentAmount((creditBill - creditBillAmount).toFixed(2))}
-                            variant="outline"
-                            className="flex-1 rounded-lg text-xs"
-                          >
-                            Pagar Total
-                          </Button>
-                          <Button
-                            onClick={() => setBillPaymentAmount(((creditBill - creditBillAmount) / 2).toFixed(2))}
-                            variant="outline"
-                            className="flex-1 rounded-lg text-xs"
-                          >
-                            Pagar 50%
-                          </Button>
-                        </div>
-                        <Button
-                          onClick={payCreditBill}
-                          className="w-full h-12 rounded-lg text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-                          style={{ backgroundColor: '#046BF4' }}
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Confirmar Pagamento
-                        </Button>
-                      </div>
-                    </>
-                  )}
-
-                  {creditBill <= creditBillAmount && (
-                    <div className="text-center py-8">
-                      <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
-                      <p className="text-green-700 font-medium">✅ Fatura Paga!</p>
-                      <p className="text-sm text-gray-600 mt-1">Você não tem saldo devedor no momento.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Payment Info Card */}
-              <Card className="shadow-md border-0 rounded-xl">
-                <CardHeader>
-                  <CardTitle className="text-sm">ℹ️ Como Funciona</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-xs text-gray-600">
-                  <p>• O pagamento da fatura sai do <strong>saldo do seu salário</strong></p>
-                  <p>• Após o pagamento, o <strong>limite do cartão é liberado</strong></p>
-                  <p>• Você pode pagar o valor total ou parcial da fatura</p>
-                  <p>• Os gastos do cartão não afetam diretamente seu salário</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* 🔵 AI TAB - Mobile First */}
-            <TabsContent value="ai" className="space-y-4">
-              <Card className="shadow-md border-0 rounded-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: '#046BF4' }}>
-                      <Brain className="w-4 h-4 text-white" />
-                    </div>
-                    Assistente IA
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
-                    <div className="flex items-start gap-3 mb-3">
-                      <TrendingUp className="w-4 h-4 text-blue-600 mt-1" />
-                      <div>
-                        <h4 className="font-medium text-blue-900 text-sm">Sugestões Personalizadas</h4>
-                        <p className="text-xs text-blue-700 mt-1">
-                          Com saldo de R$ {remainingSalary.toFixed(2)}, recomendamos diversificar seus investimentos.
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span>Reserva de emergência: 30%</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <span>Renda fixa: 50%</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                        <span>Renda variável: 20%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Alert className="border-orange-200 bg-orange-50 rounded-xl">
-                    <AlertTriangle className="h-4 w-4 text-orange-600" />
-                    <AlertDescription className="text-orange-800 text-xs">
-                      <strong>Aviso:</strong> Investimentos envolvem riscos. Pode haver perda total. 
-                      Consulte sempre um especialista.
-                    </AlertDescription>
-                  </Alert>
-
-{/* 📊 Nova Seção de Distribuição de Investimentos */}
-<div className="mt-6">
-  <h2 className="text-lg font-semibold text-gray-800 mb-3">Distribuição de Investimentos</h2>
-
-  <Card className="shadow-md border-0 rounded-xl">
-    <CardContent className="flex flex-col items-center justify-center py-6">
-      <div className="w-full h-64 flex items-center justify-center">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={investmentData}
-              dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={90}
-              fill="#8884d8"
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-            >
-              {investmentData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={['#4F46E5', '#22C55E', '#F59E0B', '#EF4444', '#06B6D4'][index % 5]}
-                />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    </CardContent>
-  </Card>
-</TabsContent>
-
-</Tabs>
-
-</div> 
-);
-}
-      
-
-  if (currentScreen === 'investment-details') {
-    return (
-
-
-     <div className={`min-h-screen transition-all duration-300 ${themes[theme].background}`}>
-  {/* Header */}
-  <div
-    className="px-6 py-4 text-center shadow-sm relative transition-all duration-300"
-    style={{ backgroundColor: theme === "light" ? "#046BF4" : "#0F172A" }}
-  >
-
-    {/* BOTÃO DARK MODE */}
-    <button
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="
-        absolute top-4 right-4 
-        p-2 rounded-full shadow-md 
-        bg-white dark:bg-gray-800 
-        hover:scale-110 transition-all duration-300
-      "
-    >
-      {theme === "light" ? (
-        <span className="text-yellow-500 text-xl">🌙</span>
-      ) : (
-        <span className="text-yellow-300 text-xl">☀️</span>
-      )}
-    </button>
-
-    <img 
-      src={logoDefinitiva} 
-      alt="BudgetPro" 
-      className="w-20 h-20 mx-auto object-contain transition-all duration-300"
-    />
-
-    <h1 className="text-white text-lg transition-all duration-300">
-      BudgetPro
-    </h1>
-  </div>
-
-  {/* MAIN CONTENT AREA */}
-  <div className="px-4 py-6 transition-all duration-300">
-    <Button
-      onClick={() => setCurrentScreen('dashboard')}
-      variant="outline"
-      className="mb-4 rounded-xl transition-all duration-300"
-      style={{
-        borderColor: theme === "light" ? "#046BF4" : "#64748B",
-        color: theme === "light" ? "#046BF4" : "#E2E8F0"
-      }}
-    >
-      <ArrowLeft className="w-4 h-4 mr-2" />
-      Voltar
-    </Button>
-
-          {selectedInvestment && (
-            <div className="space-y-4">
-              {/* Investment Header */}
-              <Card className="shadow-lg border-0 rounded-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div 
-                      className="p-3 rounded-xl"
-                      style={{ backgroundColor: `${selectedInvestment.color}20` }}
-                    >
-                      <selectedInvestment.icon 
-                        className="w-8 h-8" 
-                        style={{ color: selectedInvestment.color }} 
-                      />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-semibold">{selectedInvestment.name}</h2>
-                      <p className="text-gray-600">{selectedInvestment.type}</p>
-                      <span 
-                        className="inline-block text-xs px-2 py-1 rounded-full mt-1"
-                        style={{ 
-                          backgroundColor: `${getRiskColor(selectedInvestment.riskLevel)}20`,
-                          color: getRiskColor(selectedInvestment.riskLevel)
-                        }}
-                      >
-                        {getRiskLabel(selectedInvestment.riskLevel)} Risco
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-gray-700">{selectedInvestment.description}</p>
-                </CardContent>
-              </Card>
-
-              {/* Investment Details */}
-              <Card className="shadow-lg border-0 rounded-2xl">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl" style={{ backgroundColor: '#046BF4' }}>
-                      <FileText className="w-5 h-5 text-white" />
-                    </div>
-                    Detalhes do Investimento
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Retorno Esperado:</span>
-                      <span className="font-medium text-green-600">±{selectedInvestment.expectedReturn}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Nível de Risco:</span>
-                      <span className="font-medium">{getRiskLabel(selectedInvestment.riskLevel)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Mín. Investimento:</span>
-                      <span className="font-medium">R$ {selectedInvestment.minInvestment.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Máx. Investimento:</span>
-                      <span className="font-medium">R$ {selectedInvestment.maxInvestment.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Historical Performance Chart */}
-              <Card className="shadow-lg border-0 rounded-2xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl" style={{ backgroundColor: '#046BF4' }}>
-                      <TrendingUp className="w-5 h-5 text-white" />
-                    </div>
-                    Desempenho Histórico
-                  </CardTitle>
+                  <CardTitle>Evolução dos Últimos Meses</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
+                  <div style={{ height: 200 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={selectedInvestment.historicalData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis 
-                          dataKey="month" 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 12, fill: '#666' }}
-                        />
-                        <YAxis 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 12, fill: '#666' }}
-                          tickFormatter={(value) => `${value}%`}
-                        />
-                        <Tooltip 
-                          formatter={(value: any) => [`${value}%`, 'Performance']}
-                          labelFormatter={(label) => `Mês: ${label}`}
-                          contentStyle={{ 
-                            backgroundColor: 'white', 
-                            border: '1px solid #e0e0e0',
-                            borderRadius: '8px',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                          }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="value" 
-                          stroke={selectedInvestment.color} 
-                          strokeWidth={3}
-                          dot={{ fill: selectedInvestment.color, strokeWidth: 2, r: 4 }}
-                          activeDot={{ r: 6, fill: selectedInvestment.color }}
-                        />
+                      <LineChart data={monthlyData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="gastos" stroke="#EF4444" />
+                        <Line type="monotone" dataKey="receitas" stroke="#10B981" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Risk Warning */}
-              <Alert className="border-orange-200 bg-orange-50 rounded-2xl">
-                <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-orange-800">
-                  <strong>Aviso de risco:</strong> Esse investimento pode gerar perda total. Invista com cautela.
-                  Os valores apresentados são simulações e não garantem rendimentos futuros.
-                </AlertDescription>
-              </Alert>
+              <Card className="rounded-xl">
+                <CardHeader>
+                  <CardTitle>Distribuição de Investimentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div style={{ height: 200 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={investmentData} dataKey="value" innerRadius={30} outerRadius={60} label>
+                          {investmentData.map((entry, idx) => (
+                            <Cell key={idx} fill={['#4F46E5', '#22C55E', '#F59E0B', '#EF4444'][idx % 4]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-              {/* Action Buttons */}
+            {/* investment selection list */}
+            <Card className="rounded-xl">
+              <CardHeader>
+                <CardTitle>Opções de Investimento</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {investments.map((inv) => {
+                    const Icon = inv.icon ?? TrendingUp;
+                    const affordable = remainingSalary >= inv.minInvestment;
+                    return (
+                      <div key={inv.id} className={`p-3 rounded-lg border bg-white ${affordable ? 'hover:border-blue-300' : 'opacity-60'}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${inv.color ?? '#eee'}20` }}>
+                              <Icon className="w-5 h-5" style={{ color: inv.color ?? '#333' }} />
+                            </div>
+                            <div>
+                              <div className="font-medium">{inv.name}</div>
+                              <div className="text-xs text-gray-500">{inv.type}</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-green-600">±{inv.expectedReturn}%</div>
+                            {!affordable && <div className="text-xs text-red-500">Saldo baixo</div>}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <Button onClick={() => selectInvestment(inv)} variant="outline">Ver</Button>
+                          <Button onClick={() => alert('Comprar (demo)')} style={{ backgroundColor: '#046BF4', color: 'white' }} disabled={!affordable}>
+                            Investir
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Investment details
+  if (currentScreen === 'investment-details') {
+    return (
+      <div className={`min-h-screen ${themes[theme].background}`}>
+        <div className="px-6 py-4 text-center shadow-sm" style={{ backgroundColor: '#046BF4' }}>
+          <img src={logoDefinitiva} alt="BudgetPro" className="w-20 h-20 mx-auto object-contain" />
+          <h1 className="text-white text-lg">BudgetPro</h1>
+        </div>
+
+        <div className="px-4 py-6">
+          <Button onClick={() => setCurrentScreen('dashboard')} variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+
+          {selectedInvestment ? (
+            <div className="max-w-3xl mx-auto space-y-4">
+              <Card className="rounded-xl">
+                <CardContent>
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: `${selectedInvestment.color}20` }}>
+                      <selectedInvestment.icon className="w-8 h-8" style={{ color: selectedInvestment.color }} />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold">{selectedInvestment.name}</h2>
+                      <p className="text-gray-600">{selectedInvestment.type}</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-gray-700">{selectedInvestment.description}</p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl">
+                <CardHeader>
+                  <CardTitle>Desempenho</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div style={{ height: 220 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={selectedInvestment.historicalData ?? []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="value" stroke={selectedInvestment.color ?? '#046BF4'} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="flex gap-3">
-                <Button
-                  onClick={() => setCurrentScreen('investment-purchase')}
-                  className="flex-1 h-12 rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 hover:brightness-110"
-                  style={{ backgroundColor: '#046BF4' }}
-                >
+                <Button onClick={() => setCurrentScreen('investment-purchase')} style={{ backgroundColor: '#046BF4', color: 'white' }}>
                   Investir Agora
                 </Button>
-                <Button
-                  onClick={() => setCurrentScreen('dashboard')}
-                  variant="outline"
-                  className="flex-1 h-12 rounded-2xl border-2 hover:bg-sky-50 transition-all"
-                  style={{ borderColor: '#046BF4', color: '#046BF4' }}
-                >
-                  Voltar ao Dashboard
+                <Button variant="outline" onClick={() => setCurrentScreen('dashboard')}>
+                  Voltar
                 </Button>
               </div>
             </div>
+          ) : (
+            <div className="text-center py-20">Nenhum investimento selecionado.</div>
           )}
         </div>
       </div>
     );
   }
 
-  // Continue with other screens...
-  return null;
+  // fallback
+  return <div className={`min-h-screen ${themes[theme].background}`} />;
+}
+
+// small helper to zero temp states (used in header)
+function setTempStatesToZero() {
+  // placeholder if you want to reset more states globally
+  return;
 }

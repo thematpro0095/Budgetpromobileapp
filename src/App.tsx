@@ -1,421 +1,658 @@
-// App.tsx — Expo / React Native (funciona também no web via expo start --web)
-import React, { useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, FlatList, Alert, StyleSheet, Platform, Dimensions } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Modal from 'react-native-modal';
-import { NavigationContainer, DefaultTheme, DarkTheme, useTheme } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { LineChart, PieChart } from 'react-native-chart-kit';
-import { Ionicons } from '@expo/vector-icons';
+// src/App.tsx
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  Legend,
+} from "recharts";
 
+/**
+ * Single-file App.tsx - Vite + React + TypeScript
+ * - LocalStorage-based "backend" (auth, settings, expenses)
+ * - 3 tabs: Overview, Expenses, Charts
+ * - Modal to edit salary & credit limit
+ * - Dark/Light theme
+ *
+ * Tailwind classes used; assumes Tailwind is configured.
+ */
+
+/* ---------- Types ---------- */
+type Screen = "splash" | "login" | "dashboard";
+type PaymentMethod = "salary" | "credit";
 type Expense = {
   id: string;
   category: string;
   amount: number;
-  paymentMethod: 'salary' | 'credit';
-  date: string; // ISO
+  paymentMethod: PaymentMethod;
+  dateISO: string;
+};
+type Investment = {
+  id: string;
+  name: string;
+  value: number;
 };
 
-const STORAGE_KEY_USER = '@budgetpro_user';
-const STORAGE_KEY_DATA = '@budgetpro_data_v1';
+/* ---------- Theme config (you already had theme.ts) ---------- */
+const themes = {
+  light: {
+    background: "bg-gray-50",
+    text: "text-gray-900",
+    card: "bg-white",
+    border: "border-gray-200",
+  },
+  dark: {
+    background: "bg-gray-900",
+    text: "text-gray-100",
+    card: "bg-gray-800",
+    border: "border-gray-700",
+  },
+};
 
-const screenWidth = Dimensions.get('window').width;
+const logoPath = "/Logo.png"; // put your Logo.png in public/
 
-function validateEmail(email: string) {
-  // simples regex com domínios comuns ok
-  const re = /^[^\s@]+@[^\s@]+\.(com|net|org|com.br|br|edu|gov|io|dev|me)$/i;
-  return re.test(email);
-}
+/* ---------- Helpers ---------- */
+const uid = (prefix = "") => prefix + Math.random().toString(36).slice(2, 9);
 
-function uid() {
-  return Math.random().toString(36).slice(2, 9);
-}
+const monthName = (d: Date) =>
+  d.toLocaleString("pt-BR", { month: "short", timeZone: "UTC" });
 
-/* ---------------------- Auth & Persistence ---------------------- */
-async function saveUserToStorage(user: { email: string; password: string }) {
-  await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
-}
-async function loadUserFromStorage() {
-  const txt = await AsyncStorage.getItem(STORAGE_KEY_USER);
-  return txt ? JSON.parse(txt) : null;
-}
-async function saveAppData(data: any) {
-  await AsyncStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(data));
-}
-async function loadAppData() {
-  const txt = await AsyncStorage.getItem(STORAGE_KEY_DATA);
-  return txt ? JSON.parse(txt) : null;
-}
+/* ---------- Local Storage Keys ---------- */
+const LS_KEYS = {
+  auth: "bp_auth_v1",
+  settings: "bp_settings_v1",
+  expenses: "bp_expenses_v1",
+};
 
-/* ---------------------- Screens ---------------------- */
-function HomeScreen({ route }: any) {
-  // recebe props via route.params se necessário
-  const theme = useTheme();
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>Bem-vindo ao BudgetPro</Text>
-      <Text style={{ color: theme.colors.text }}>Use a aba "Configurar" para ajustar seu salário e limite do cartão.</Text>
-    </SafeAreaView>
+/* ---------- Component ---------- */
+export default function App(): JSX.Element {
+  /* ---------- Routing / Auth ---------- */
+  const [screen, setScreen] = useState<Screen>("splash");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loggedEmail, setLoggedEmail] = useState<string | null>(null);
+
+  /* ---------- App Data ---------- */
+  const [salary, setSalary] = useState<number>(0);
+  const [creditLimit, setCreditLimit] = useState<number>(0);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  /* ---------- UI state ---------- */
+  const [activeTab, setActiveTab] = useState<"overview" | "expenses" | "charts">(
+    "overview"
   );
-}
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [tmpSalary, setTmpSalary] = useState("");
+  const [tmpCredit, setTmpCredit] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  const [newAmount, setNewAmount] = useState("");
+  const [newPaymentMethod, setNewPaymentMethod] = useState<PaymentMethod>(
+    "salary"
+  );
+  const [loginError, setLoginError] = useState<string | null>(null);
 
-function SettingsScreen({ navigation, route }: any) {
-  const theme = useTheme();
-  // We'll receive app state via route.params (we'll wire from root)
-  const { appState, setAppState } = route.params;
+  /* ---------- Mock investments (kept simple) ---------- */
+  const [investments, setInvestments] = useState<Investment[]>([
+    { id: "inv-1", name: "TechNova", value: 0 },
+    { id: "inv-2", name: "CoinX", value: 0 },
+    { id: "inv-3", name: "FII Alpha", value: 0 },
+  ]);
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [salaryInput, setSalaryInput] = useState(String(appState.salary || '0'));
-  const [creditInput, setCreditInput] = useState(String(appState.creditLimit || '0'));
-
+  /* ---------- Persist & Load from localStorage ---------- */
   useEffect(() => {
-    setSalaryInput(String(appState.salary ?? 0));
-    setCreditInput(String(appState.creditLimit ?? 0));
-  }, [appState]);
-
-  function saveModal() {
-    const s = Number(salaryInput) || 0;
-    const c = Number(creditInput) || 0;
-    const newState = { ...appState, salary: s, creditLimit: c };
-    setAppState(newState);
-    saveAppData(newState);
-    setModalVisible(false);
-  }
-
-  // top summary uses appState
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Resumo</Text>
-
-      <View style={[styles.rowCard, { borderColor: theme.colors.border }]}>
-        <View>
-          <Text style={[styles.label, { color: theme.colors.text }]}>Salário Mensal</Text>
-          <Text style={[styles.big, { color: theme.colors.text }]}>R$ {Number(appState.salary || 0).toFixed(2)}</Text>
-        </View>
-        <View>
-          <Text style={[styles.label, { color: theme.colors.text }]}>Limite do Cartão</Text>
-          <Text style={[styles.big, { color: theme.colors.text }]}>R$ {Number(appState.creditLimit || 0).toFixed(2)}</Text>
-        </View>
-      </View>
-
-      <TouchableOpacity style={[styles.btnPrimary]} onPress={() => setModalVisible(true)}>
-        <Text style={styles.btnPrimaryText}>Modificar Salário / Limite</Text>
-      </TouchableOpacity>
-
-      <Text style={[styles.sectionTitle, { marginTop: 20, color: theme.colors.text }]}>Histórico Rápido</Text>
-      <View style={{ height: 220 }}>
-        {/* small monthly chart using totals */}
-        <LineChart
-          data={{
-            labels: appState.monthlyLabels || ['Jan', 'Fev', 'Mar', 'Abr'],
-            datasets: [{
-              data: appState.monthlyGastos || [0,0,0,0],
-            }]
-          }}
-          width={screenWidth - 40}
-          height={200}
-          chartConfig={{
-            backgroundGradientFrom: theme.colors.background as string,
-            backgroundGradientTo: theme.colors.background as string,
-            color: (opacity = 1) => `rgba(4,107,244, ${opacity})`,
-            labelColor: () => theme.colors.text as string,
-          }}
-          style={{ borderRadius: 12 }}
-        />
-      </View>
-
-      <Modal isVisible={modalVisible}>
-        <View style={[styles.modal, { backgroundColor: theme.colors.card }]}>
-          <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Editar Salário e Limite</Text>
-          <TextInput
-            keyboardType="numeric"
-            value={salaryInput}
-            onChangeText={setSalaryInput}
-            placeholder="Salário mensal"
-            style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border }]}
-          />
-          <TextInput
-            keyboardType="numeric"
-            value={creditInput}
-            onChangeText={setCreditInput}
-            placeholder="Limite do cartão"
-            style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border }]}
-          />
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <TouchableOpacity style={[styles.btnOutline]} onPress={() => setModalVisible(false)}>
-              <Text>Cancelar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.btnPrimary]} onPress={saveModal}>
-              <Text style={styles.btnPrimaryText}>Salvar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
-  );
-}
-
-function ExpensesScreen({ route }: any) {
-  const theme = useTheme();
-  const { appState, setAppState } = route.params;
-  const [category, setCategory] = useState('');
-  const [amount, setAmount] = useState('');
-
-  function addExpense(method: 'salary' | 'credit') {
-    const amt = Number(amount);
-    if (!category || !amt || amt <= 0) {
-      Alert.alert('Erro', 'Preencha categoria e valor válido.');
-      return;
-    }
-    const newExpense: Expense = {
-      id: uid(),
-      category,
-      amount: amt,
-      paymentMethod: method,
-      date: new Date().toISOString(),
-    };
-    const newExpenses = [...(appState.expenses || []), newExpense];
-    const newState = { ...appState, expenses: newExpenses };
-    setAppState(newState);
-    saveAppData(newState);
-    setCategory('');
-    setAmount('');
-  }
-
-  function removeExpense(id: string) {
-    const newExpenses = (appState.expenses || []).filter((e: Expense) => e.id !== id);
-    const newState = { ...appState, expenses: newExpenses };
-    setAppState(newState);
-    saveAppData(newState);
-  }
-
-  const salaryExpenses = (appState.expenses || []).filter((e: Expense) => e.paymentMethod === 'salary');
-  const creditExpenses = (appState.expenses || []).filter((e: Expense) => e.paymentMethod === 'credit');
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Adicionar gasto</Text>
-
-      <TextInput
-        placeholder="Categoria"
-        placeholderTextColor={theme.colors.text as string}
-        value={category}
-        onChangeText={setCategory}
-        style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border }]}
-      />
-      <TextInput
-        placeholder="Valor (R$)"
-        placeholderTextColor={theme.colors.text as string}
-        keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
-        style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border }]}
-      />
-
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <TouchableOpacity style={[styles.btnPrimary, { flex: 1 }]} onPress={() => addExpense('salary')}>
-          <Text style={styles.btnPrimaryText}>Pagar com Salário</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.btnOutline, { flex: 1 }]} onPress={() => addExpense('credit')}>
-          <Text>Usar Cartão</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={[styles.sectionTitle, { marginTop: 18, color: theme.colors.text }]}>Gastos pag. com Salário</Text>
-      <FlatList
-        data={salaryExpenses}
-        keyExtractor={(i) => i.id}
-        renderItem={({ item }) => (
-          <View style={[styles.rowCard, { borderColor: theme.colors.border }]}>
-            <View>
-              <Text style={{ color: theme.colors.text }}>{item.category}</Text>
-              <Text style={{ color: theme.colors.text, opacity: 0.7 }}>{new Date(item.date).toLocaleString()}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: theme.colors.text }}>R$ {item.amount.toFixed(2)}</Text>
-              <TouchableOpacity onPress={() => removeExpense(item.id)}>
-                <Text style={{ color: 'red' }}>Remover</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      />
-
-      <Text style={[styles.sectionTitle, { marginTop: 12, color: theme.colors.text }]}>Gastos no Cartão</Text>
-      <FlatList
-        data={creditExpenses}
-        keyExtractor={(i) => i.id}
-        renderItem={({ item }) => (
-          <View style={[styles.rowCard, { borderColor: theme.colors.border }]}>
-            <View>
-              <Text style={{ color: theme.colors.text }}>{item.category}</Text>
-              <Text style={{ color: theme.colors.text, opacity: 0.7 }}>{new Date(item.date).toLocaleString()}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ color: theme.colors.text }}>R$ {item.amount.toFixed(2)}</Text>
-              <TouchableOpacity onPress={() => removeExpense(item.id)}>
-                <Text style={{ color: 'red' }}>Remover</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      />
-    </SafeAreaView>
-  );
-}
-
-function InvestmentsScreen({ route }: any) {
-  const theme = useTheme();
-  const { appState } = route.params;
-
-  // Simple pie for distribution of salary vs credit usage
-  const salaryTotal = (appState.expenses || []).filter((e: Expense) => e.paymentMethod === 'salary').reduce((s: number, cur: Expense) => s + cur.amount, 0);
-  const creditTotal = (appState.expenses || []).filter((e: Expense) => e.paymentMethod === 'credit').reduce((s: number, cur: Expense) => s + cur.amount, 0);
-
-  const pieData = [
-    { name: 'Salário', amount: salaryTotal, color: '#046BF4', legendFontColor: theme.colors.text as string, legendFontSize: 12 },
-    { name: 'Cartão', amount: creditTotal, color: '#8B5CF6', legendFontColor: theme.colors.text as string, legendFontSize: 12 },
-  ];
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Distribuição Atual</Text>
-      <View>
-        <PieChart
-          data={pieData.map(p => ({ name: p.name, population: p.amount, color: p.color, legendFontColor: p.legendFontColor, legendFontSize: p.legendFontSize }))}
-          width={screenWidth - 20}
-          height={220}
-          chartConfig={{
-            backgroundColor: theme.colors.background as string,
-            color: () => '#000',
-          }}
-          accessor="population"
-          backgroundColor="transparent"
-          paddingLeft="15"
-          absolute
-        />
-      </View>
-      <Text style={{ color: theme.colors.text, marginTop: 12 }}>Total gasto com salário: R$ {salaryTotal.toFixed(2)}</Text>
-      <Text style={{ color: theme.colors.text }}>Total gasto no cartão: R$ {creditTotal.toFixed(2)}</Text>
-    </SafeAreaView>
-  );
-}
-
-/* ---------------------- Root App ---------------------- */
-const Tab = createBottomTabNavigator();
-
-export default function App() {
-  const [appState, setAppState] = useState<any>({
-    salary: 0,
-    creditLimit: 0,
-    expenses: [],
-    monthlyLabels: ['Jan','Fev','Mar','Abr'],
-    monthlyGastos: [0,0,0,0],
-  });
-  const [user, setUser] = useState<{ email: string; password: string } | null>(null);
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
-
-  // load stored data
-  useEffect(() => {
-    (async () => {
-      const u = await loadUserFromStorage();
-      if (u) setUser(u);
-      const d = await loadAppData();
-      if (d) setAppState(d);
-    })();
+    // Splash -> login
+    const t = setTimeout(() => {
+      // try autologin
+      const a = localStorage.getItem(LS_KEYS.auth);
+      if (a) {
+        try {
+          const parsed = JSON.parse(a) as { email: string; password: string };
+          if (parsed?.email) {
+            setLoggedEmail(parsed.email);
+            setScreen("dashboard");
+          } else {
+            setScreen("login");
+          }
+        } catch {
+          setScreen("login");
+        }
+      } else {
+        setScreen("login");
+      }
+    }, 800);
+    return () => clearTimeout(t);
   }, []);
 
-  // simple auth UI if no user saved (very small)
-  if (!user) {
-    return <AuthScreen onSignIn={(u) => { setUser(u); saveUserToStorage(u);} } />;
+  useEffect(() => {
+    // load settings: salary, credit, theme
+    const settings = localStorage.getItem(LS_KEYS.settings);
+    if (settings) {
+      try {
+        const s = JSON.parse(settings) as {
+          salary?: number;
+          creditLimit?: number;
+          theme?: "light" | "dark";
+        };
+        if (typeof s.salary === "number") setSalary(s.salary);
+        if (typeof s.creditLimit === "number") setCreditLimit(s.creditLimit);
+        if (s.theme) setTheme(s.theme);
+      } catch {
+        // ignore
+      }
+    }
+    // load expenses
+    const ex = localStorage.getItem(LS_KEYS.expenses);
+    if (ex) {
+      try {
+        const parsed = JSON.parse(ex) as Expense[];
+        setExpenses(parsed || []);
+      } catch {
+        setExpenses([]);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    // persist settings and expenses on change
+    const s = { salary, creditLimit, theme };
+    localStorage.setItem(LS_KEYS.settings, JSON.stringify(s));
+  }, [salary, creditLimit, theme]);
+
+  useEffect(() => {
+    localStorage.setItem(LS_KEYS.expenses, JSON.stringify(expenses));
+  }, [expenses]);
+
+  /* ---------- Auth funcs ---------- */
+  function validateEmailFormat(v: string) {
+    // require common providers - but allow any with '@' and domain
+    const simple = /^[^\s@]+@[^\s@]+\.(com|net|org|br|edu|io|dev|com.br|gmail|hotmail|yahoo|outlook|live)$/i;
+    // fallback: require '@' and a dot
+    const fallback = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return simple.test(v) || fallback.test(v);
   }
 
-  const navTheme = themeMode === 'light' ? DefaultTheme : DarkTheme;
-
-  return (
-    <NavigationContainer theme={navTheme}>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarStyle: { backgroundColor: navTheme.colors.card },
-          tabBarActiveTintColor: '#046BF4',
-          tabBarInactiveTintColor: navTheme.colors.text,
-          tabBarIcon: ({ color, size }) => {
-            if (route.name === 'Home') return <Ionicons name="home-outline" size={size} color={color} />;
-            if (route.name === 'Gastos') return <Ionicons name="list-outline" size={size} color={color} />;
-            if (route.name === 'Distribuição') return <Ionicons name="pie-chart-outline" size={size} color={color} />;
-            if (route.name === 'Configurar') return <Ionicons name="settings-outline" size={size} color={color} />;
-            return null;
-          }
-        })}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} initialParams={{ appState, setAppState }} />
-        <Tab.Screen name="Gastos">
-          {props => <ExpensesScreen {...props} appState={appState} setAppState={setAppState} route={{...props.route, params: { appState, setAppState }}} />}
-        </Tab.Screen>
-        <Tab.Screen name="Distribuição">
-          {props => <InvestmentsScreen {...props} appState={appState} setAppState={setAppState} route={{...props.route, params: { appState, setAppState }}} />}
-        </Tab.Screen>
-        <Tab.Screen name="Configurar">
-          {props => <SettingsScreen {...props} appState={appState} setAppState={setAppState} route={{...props.route, params: { appState, setAppState }}} />}
-        </Tab.Screen>
-      </Tab.Navigator>
-
-      {/* floating theme toggle */}
-      <TouchableOpacity
-        style={[styles.themeToggle]}
-        onPress={() => setThemeMode((m) => (m === 'light' ? 'dark' : 'light'))}
-      >
-        <Text style={{ color: '#fff' }}>{themeMode === 'light' ? '🌙' : '☀️'}</Text>
-      </TouchableOpacity>
-    </NavigationContainer>
-  );
-}
-
-/* ---------------------- Tiny Auth screen component ---------------------- */
-function AuthScreen({ onSignIn }: { onSignIn: (u: { email: string; password: string }) => void }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  async function handleSignup() {
-    if (!validateEmail(email)) {
-      Alert.alert('Email inválido', 'Use um email válido (ex: seu@provedor.com).');
+  function handleSignupOrLogin() {
+    setLoginError(null);
+    if (!validateEmailFormat(email)) {
+      setLoginError("Email inválido — use um formato tipo nome@gmail.com");
       return;
     }
     if (password.length < 4) {
-      Alert.alert('Senha fraca', 'Senha precisa ter ao menos 4 caracteres.');
+      setLoginError("Senha muito curta — use ao menos 4 caracteres");
       return;
     }
-    // save minimal user locally
-    await saveUserToStorage({ email, password });
-    onSignIn({ email, password });
+    // simple store (not secure): in a real app, use backend + hashing
+    const auth = { email, password };
+    localStorage.setItem(LS_KEYS.auth, JSON.stringify(auth));
+    setLoggedEmail(email);
+    setScreen("dashboard");
   }
 
+  function handleLogout() {
+    setLoggedEmail(null);
+    // keep auth saved but navigate to login
+    setScreen("login");
+  }
+
+  /* ---------- Expense funcs ---------- */
+  function addExpense() {
+    setNewCategory((c) => c.trim());
+    const amountNum = Number(newAmount);
+    if (!newCategory || isNaN(amountNum) || amountNum <= 0) return;
+    const e: Expense = {
+      id: uid("e"),
+      category: newCategory,
+      amount: amountNum,
+      paymentMethod: newPaymentMethod,
+      dateISO: new Date().toISOString(),
+    };
+    setExpenses((s) => [e, ...s]);
+    setNewCategory("");
+    setNewAmount("");
+    // If user adds credit expense, increase credit usage (we compute from expenses)
+    // No explicit state needed - computed values below will reflect change.
+  }
+
+  function removeExpense(id: string) {
+    setExpenses((s) => s.filter((x) => x.id !== id));
+  }
+
+  /* ---------- Derived/calculated values ---------- */
+  const salaryExpenses = useMemo(
+    () =>
+      expenses
+        .filter((e) => e.paymentMethod === "salary")
+        .reduce((acc, cur) => acc + cur.amount, 0),
+    [expenses]
+  );
+  const creditExpenses = useMemo(
+    () =>
+      expenses
+        .filter((e) => e.paymentMethod === "credit")
+        .reduce((acc, cur) => acc + cur.amount, 0),
+    [expenses]
+  );
+  const remainingSalary = Math.max(0, salary - salaryExpenses);
+  const availableCredit = Math.max(0, creditLimit - creditExpenses);
+  const expensePercentage = salary > 0 ? (salaryExpenses / salary) * 100 : 0;
+  const creditPercentage = creditLimit > 0 ? (creditExpenses / creditLimit) * 100 : 0;
+
+  /* ---------- Monthly aggregation for charts ---------- */
+  const monthlyData = useMemo(() => {
+    // Build a map for the current month only by default
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Filter expenses for the current month
+    const monthExpenses = expenses.filter((e) => {
+      const d = new Date(e.dateISO);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const gastos = monthExpenses.reduce((acc, cur) => acc + cur.amount, 0);
+    // For receitas (income) use salary for current month if salary > 0
+    const receitas = salary;
+    // investments: sum of investments array values
+    const investimentos = investmentsSum(investments);
+
+    return [
+      {
+        month: monthName(now),
+        receitas,
+        gastos,
+        investimentos,
+      },
+    ];
+  }, [expenses, salary, investments]);
+
+  function investmentsSum(arr: Investment[]) {
+    return arr.reduce((a, b) => a + (b.value || 0), 0);
+  }
+
+  /* ---------- Charts data for Pie (salary categories) ---------- */
+  const salaryPieChartData = useMemo(() => {
+    const byCat: Record<string, number> = {};
+    expenses
+      .filter((e) => e.paymentMethod === "salary")
+      .forEach((e) => {
+        byCat[e.category] = (byCat[e.category] || 0) + e.amount;
+      });
+    return Object.entries(byCat).map(([name, value], i) => ({
+      name,
+      value,
+      color: ["#4F46E5", "#22C55E", "#F59E0B", "#EF4444", "#06B6D4"][i % 5],
+    }));
+  }, [expenses]);
+
+  const investmentPieData = useMemo(() => {
+    // if investments have zero values, show placeholder zeros
+    return investments.map((inv, idx) => ({
+      name: inv.name,
+      value: Math.max(0, inv.value),
+      color: ["#4F46E5", "#22C55E", "#F59E0B", "#EF4444", "#06B6D4"][idx % 5],
+    }));
+  }, [investments]);
+
+  /* ---------- UI helpers ---------- */
+  function openEditModal() {
+    setTmpSalary(String(salary || ""));
+    setTmpCredit(String(creditLimit || ""));
+    setShowEditModal(true);
+  }
+  function saveEditModal() {
+    const s = Number(tmpSalary) || 0;
+    const c = Number(tmpCredit) || 0;
+    setSalary(s);
+    setCreditLimit(c);
+    setShowEditModal(false);
+  }
+
+  /* ---------- Theme apply class on body (for background) ---------- */
+  useEffect(() => {
+    document.documentElement.classList.remove("dark");
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+  }, [theme]);
+
+  /* ---------- Small utilities for formatting ---------- */
+  const money = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  /* ---------- Render screens ---------- */
+  if (screen === "splash") {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${themes[theme].background}`}>
+        <div className="text-center">
+          <img src={logoPath} className="w-28 h-28 mx-auto mb-4" alt="Logo" />
+          <h1 className="text-2xl font-bold">BudgetPro</h1>
+          <p className="mt-2 text-sm text-gray-400">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "login") {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${themes[theme].background}`}>
+        <div className="max-w-md w-full p-6 rounded-2xl shadow-lg" style={{ background: theme === "dark" ? "#0b1220" : "#ffffff" }}>
+          <div className="text-center mb-4">
+            <img src={logoPath} className="w-20 h-20 mx-auto" alt="Logo" />
+            <h2 className="text-xl mt-2 font-semibold">Entrar no BudgetPro</h2>
+          </div>
+
+          <label className="text-xs block mb-1">Email</label>
+          <input
+            className="w-full p-3 rounded-lg mb-3 border"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="nome@gmail.com"
+            type="email"
+          />
+          <label className="text-xs block mb-1">Senha</label>
+          <input
+            className="w-full p-3 rounded-lg mb-3 border"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="senha"
+            type="password"
+          />
+
+          {loginError && <div className="text-red-500 text-sm mb-2">{loginError}</div>}
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleSignupOrLogin}
+              className="flex-1 bg-blue-500 text-white p-3 rounded-lg"
+            >
+              Entrar / Criar conta
+            </button>
+            <button
+              onClick={() => { setEmail("demo@gmail.com"); setPassword("1234"); }}
+              className="px-3 rounded-lg border"
+            >
+              Demo
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main dashboard
   return (
-    <SafeAreaView style={[styles.container, { justifyContent: 'center', padding: 20 }]}>
-      <Text style={styles.title}>BudgetPro — Entrar / Criar conta</Text>
-      <TextInput placeholder="Email" autoCapitalize="none" value={email} onChangeText={setEmail} style={styles.input} />
-      <TextInput placeholder="Senha" secureTextEntry value={password} onChangeText={setPassword} style={styles.input} />
-      <TouchableOpacity style={styles.btnPrimary} onPress={handleSignup}>
-        <Text style={styles.btnPrimaryText}>Criar / Entrar</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+    <div className={`${themes[theme].background} min-h-screen ${themes[theme].text} transition-colors`}>
+      {/* Header */}
+      <header className="px-4 py-3 shadow-sm flex items-center justify-between" style={{ backgroundColor: '#046BF4' }}>
+        <div className="flex items-center gap-3">
+          <img src={logoPath} alt="logo" className="w-12 h-12 object-contain" />
+          <div>
+            <div className="text-white font-semibold">BudgetPro</div>
+            <div className="text-white/90 text-xs">Controle financeiro simples</div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="text-white text-sm hidden sm:block">{loggedEmail}</div>
+
+          <button
+            onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+            className="px-3 py-2 rounded-lg bg-white/20 text-white"
+            title="Alternar tema"
+          >
+            {theme === "light" ? "🌙" : "☀️"}
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="px-3 py-2 rounded-lg border border-white/30 text-white"
+          >
+            Sair
+          </button>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className="p-4 max-w-5xl mx-auto">
+
+        {/* Tabs */}
+        <nav className="flex gap-2 mb-4">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`px-4 py-2 rounded-xl ${activeTab === "overview" ? "bg-blue-500 text-white" : "bg-white/90"}`}
+          >
+            Visão Geral
+          </button>
+          <button
+            onClick={() => setActiveTab("expenses")}
+            className={`px-4 py-2 rounded-xl ${activeTab === "expenses" ? "bg-blue-500 text-white" : "bg-white/90"}`}
+          >
+            Gastos
+          </button>
+          <button
+            onClick={() => setActiveTab("charts")}
+            className={`px-4 py-2 rounded-xl ${activeTab === "charts" ? "bg-blue-500 text-white" : "bg-white/90"}`}
+          >
+            Gráficos
+          </button>
+        </nav>
+
+        {/* === OVERVIEW TAB === */}
+        {activeTab === "overview" && (
+          <section className="space-y-4">
+
+            {/* Salary & Credit Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={`${themes[theme].card} p-4 rounded-2xl shadow`}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-sm text-gray-500">Salário Mensal</div>
+                    <div className="text-xl font-semibold">{money(salary)}</div>
+                  </div>
+                  <button onClick={openEditModal} className="text-sm px-3 py-1 rounded-md border">
+                    Modificar
+                  </button>
+                </div>
+                <div className="mt-3 text-xs text-gray-500">Gastos pagos com salário: {money(salaryExpenses)}</div>
+                <div className="mt-2 font-semibold text-blue-600">Disponível: {money(remainingSalary)}</div>
+              </div>
+
+              <div className={`${themes[theme].card} p-4 rounded-2xl shadow`}>
+                <div className="text-sm text-gray-500">Limite do Cartão</div>
+                <div className="text-xl font-semibold">{money(creditLimit)}</div>
+                <div className="mt-2 text-xs text-gray-500">Gasto no cartão: {money(creditExpenses)}</div>
+                <div className="mt-2 font-semibold text-purple-600">Limite livre: {money(availableCredit)}</div>
+              </div>
+
+              <div className={`${themes[theme].card} p-4 rounded-2xl shadow`}>
+                <div className="text-sm text-gray-500">Resumo Rápido</div>
+                <div className="mt-2">
+                  <div className="text-xs">Percentual do salário usado: {expensePercentage.toFixed(1)}%</div>
+                  <div className="text-xs mt-1">Percentual do cartão usado: {creditPercentage.toFixed(1)}%</div>
+                </div>
+                <div className="mt-3">
+                  <button onClick={() => setActiveTab("expenses")} className="px-3 py-2 bg-blue-500 text-white rounded-lg">
+                    Ir para Prancheta de Gastos
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Salary categories quick pie */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`${themes[theme].card} p-4 rounded-2xl shadow`}>
+                <div className="text-sm font-medium mb-2">Por Categoria (Salário)</div>
+                {salaryPieChartData.length > 0 ? (
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={salaryPieChartData} dataKey="value" nameKey="name" innerRadius={30} outerRadius={60}>
+                          {salaryPieChartData.map((d, i) => (
+                            <Cell key={i} fill={d.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(v: number) => money(v)} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">Sem dados</div>
+                )}
+              </div>
+
+              <div className={`${themes[theme].card} p-4 rounded-2xl shadow`}>
+                <div className="text-sm font-medium mb-2">Investimentos (Resumo)</div>
+                <div className="text-lg font-semibold">{money(investmentsSum(investments))}</div>
+                <div className="mt-2 text-xs text-gray-500">Investimentos simulados (0 até valores)</div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* === EXPENSES TAB === */}
+        {activeTab === "expenses" && (
+          <section>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={`${themes[theme].card} p-4 rounded-2xl shadow md:col-span-1`}>
+                <div className="text-sm font-medium">Adicionar gasto</div>
+                <input
+                  className="w-full p-2 rounded-lg mt-2 border"
+                  placeholder="Categoria (ex: Alimentação)"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                />
+                <input
+                  className="w-full p-2 rounded-lg mt-2 border"
+                  placeholder="Valor (R$)"
+                  value={newAmount}
+                  onChange={(e) => setNewAmount(e.target.value)}
+                  type="number"
+                />
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => setNewPaymentMethod("salary")}
+                    className={`flex-1 p-2 rounded-lg ${newPaymentMethod === "salary" ? "bg-green-400 text-white" : "bg-white/90"}`}
+                  >
+                    Pago com salário
+                  </button>
+                  <button
+                    onClick={() => setNewPaymentMethod("credit")}
+                    className={`flex-1 p-2 rounded-lg ${newPaymentMethod === "credit" ? "bg-purple-400 text-white" : "bg-white/90"}`}
+                  >
+                    No cartão
+                  </button>
+                </div>
+                <button onClick={addExpense} className="w-full mt-3 bg-blue-500 text-white p-2 rounded-lg">
+                  Adicionar gasto
+                </button>
+              </div>
+
+              <div className={`${themes[theme].card} p-4 rounded-2xl shadow md:col-span-2`}>
+                <div className="text-sm font-medium mb-3">Lista de Gastos</div>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {expenses.length === 0 && <div className="text-gray-500">Nenhum gasto</div>}
+                  {expenses.map((e) => (
+                    <div key={e.id} className="flex items-center justify-between p-2 border rounded-lg">
+                      <div>
+                        <div className="font-medium">{e.category}</div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(e.dateISO).toLocaleString("pt-BR")} • {e.paymentMethod}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold">{money(e.amount)}</div>
+                        <button onClick={() => removeExpense(e.id)} className="text-red-500 text-sm px-2">Remover</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* === CHARTS TAB === */}
+        {activeTab === "charts" && (
+          <section className="space-y-4">
+            <div className={`${themes[theme].card} p-4 rounded-2xl shadow`}>
+              <div className="text-sm font-medium mb-2">Evolução do mês atual</div>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(v: number) => money(v)} />
+                    <Legend />
+                    <Line type="monotone" dataKey="receitas" stroke="#10B981" />
+                    <Line type="monotone" dataKey="gastos" stroke="#EF4444" />
+                    <Line type="monotone" dataKey="investimentos" stroke="#046BF4" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`${themes[theme].card} p-4 rounded-2xl shadow`}>
+                <div className="text-sm font-medium mb-2">Distribuição por categoria (salário)</div>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={salaryPieChartData} dataKey="value" nameKey="name" innerRadius={30} outerRadius={80} label>
+                        {salaryPieChartData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(v: number) => money(v)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className={`${themes[theme].card} p-4 rounded-2xl shadow`}>
+                <div className="text-sm font-medium mb-2">Distribuição de Investimentos</div>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={investmentPieData} dataKey="value" nameKey="name" innerRadius={30} outerRadius={80} label>
+                        {investmentPieData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(v: number) => money(v)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <h3 className="font-semibold mb-3">Editar Salário e Limite</h3>
+            <label className="text-xs">Salário mensal</label>
+            <input className="w-full p-2 border rounded-lg mb-3" value={tmpSalary} onChange={(e) => setTmpSalary(e.target.value)} />
+            <label className="text-xs">Limite do cartão</label>
+            <input className="w-full p-2 border rounded-lg mb-4" value={tmpCredit} onChange={(e) => setTmpCredit(e.target.value)} />
+            <div className="flex gap-2">
+              <button onClick={saveEditModal} className="flex-1 bg-blue-500 text-white p-2 rounded-lg">Salvar</button>
+              <button onClick={() => setShowEditModal(false)} className="flex-1 border rounded-lg p-2">Cancelar</button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Alterações salvam imediatamente e atualizam o dashboard.</p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
-
-/* ---------------------- Styles ---------------------- */
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12 },
-  title: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '700' },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 10, marginVertical: 8 },
-  btnPrimary: { backgroundColor: '#046BF4', padding: 12, borderRadius: 12, alignItems: 'center', marginTop: 8 },
-  btnPrimaryText: { color: '#fff', fontWeight: '700' },
-  btnOutline: { borderWidth: 1, borderColor: '#ccc', padding: 12, borderRadius: 12, alignItems: 'center', marginTop: 8, flex: 1 },
-  rowCard: { borderWidth: 1, borderRadius: 10, padding: 12, marginVertical: 6, flexDirection: 'row', justifyContent: 'space-between' },
-  modal: { padding: 16, borderRadius: 12 },
-  modalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  big: { fontSize: 18, fontWeight: '700' },
-  label: { fontSize: 12, opacity: 0.8 },
-  themeToggle: { position: 'absolute', right: 16, bottom: 18, backgroundColor: '#046BF4', padding: 12, borderRadius: 40, elevation: 4 }
-});

@@ -636,8 +636,8 @@ useEffect(() => {
   const currentMonth = new Date().toLocaleString("pt-BR", { month: "short" });
   const existingMonth = monthlyData.find((m) => m.month === currentMonth);
 
-  // Pega o investimento real do cliente, ou 0 se ninguém investiu
-  const investimentosCliente = clientInvestments ?? 0;
+  // Se ninguém investiu, usa 0
+  const investimentosCliente = 0;
 
   let updated;
   if (existingMonth) {
@@ -655,7 +655,8 @@ useEffect(() => {
 
   setMonthlyData(updated);
   localStorage.setItem("monthlyData", JSON.stringify(updated));
-}, [salary, totalExpenses, clientInvestments]);
+}, [salary, totalExpenses]);
+
 
 
   // 🔵 1. Gráfico de Pizza (Distribuição de Recursos) - DATA

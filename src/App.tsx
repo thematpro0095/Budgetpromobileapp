@@ -102,7 +102,7 @@ const MOCK_INVESTMENTS: Investment[] = [
       { month: 'Mar', value: 108 },
       { month: 'Abr', value: 112 },
       { month: 'Mai', value: 110 },
-      { month: 'Jun', value: 115 }
+      { month: 'Jun', value: 115 },
     ],
     status: 'available'
   },

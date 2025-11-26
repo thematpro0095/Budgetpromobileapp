@@ -185,8 +185,8 @@ export default function App() {
   const [creditLimit, setCreditLimit] = useState(0);
   
   // New financial control states
-  const [salaryUsed, setSalaryUsed] = useState(0);
-  const [creditUsed, setCreditUsed] = useState(0);
+  const [salary, setSalary] = useState<number>(0);
+  const [creditLimit, setCreditLimit] = useState<number>(0);
   const [bankDebt, setBankDebt] = useState(0);
   
   // Separate expenses for salary and credit card
@@ -248,21 +248,32 @@ const [expenses, setExpenses] = useState<Expense[]>([]);
     localStorage.setItem('budgetProData', JSON.stringify(dataToSave));
   }, [salary, creditLimit, expenses, creditBillAmount, investments]);
   
-  // ============ CARREGA OS DADOS SALVOS QUANDO O APP INICIA ============
+// CARREGA DADOS SALVOS (NUNCA mais força 5000/3000)
 useEffect(() => {
   const saved = localStorage.getItem('budgetProData');
-  if (saved) {
-    try {
-      const data = JSON.parse(saved);
-      setSalary(data.salary || 5000);
-      setCreditLimit(data.creditLimit || 3000);
-      setExpenses(data.expenses || []);
-      setCreditBillAmount(data.creditBillAmount || 0);
-      setInvestments(data.investments || MOCK_INVESTMENTS);
-      console.log('Dados carregados do localStorage!');
-    } catch (e) {
-      console.error('Erro ao carregar dados salvos', e);
+  if (!saved) return;
+
+  try {
+    const data = JSON.parse(saved);
+
+    // Só atualiza se existir de verdade
+    if (data.salary !== undefined) setSalary(data.salary);
+    if (data.creditLimit !== undefined) setCreditLimit(data.creditLimit);
+    if (data.expenses) setExpenses(data.expenses);
+    if (data.creditBillAmount !== undefined) setCreditBillAmount(data.creditBillAmount);
+
+    // Investimentos: junta os dados salvos com os ícones originais
+    if (data.investments && Array.isArray(data.investments)) {
+      setInvestments(prev => 
+        prev.map(original => {
+          const savedInv = data.investments.find((s: any) => s.id === original.id);
+          return savedInv ? { ...original, ...savedInv } : original;
+        })
+      );
     }
+  } catch (e) {
+    console.error("Erro ao carregar dados salvos", e);
+    localStorage.removeItem('budgetProData'); // limpa se estiver corrompido
   }
 }, []);
 

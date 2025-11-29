@@ -41,7 +41,7 @@ import {
   Sun
 } from 'lucide-react';
 import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend, Pie } from 'recharts';
-import logoDefinitiva from 'assets/logo.png';
+import logoDefinitiva from '@/assets/logo.png';
 
 type Screen = 'splash' | 'login' | 'signup' | 'forgot-password' | 'reset-password' | 'dashboard' | 'investment-details' | 'investment-purchase' | 'investment-result';
 type IconType = 'coffee' | 'car' | 'home' | 'shopping' | 'smartphone';

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
 
 const logoDefinitiva = "/logo.png";
 
@@ -36,11 +35,13 @@ export default function App() {
           fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
         }}
       >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1 }}
-          style={{ marginBottom: '2rem', maxWidth: '100%' }}
+        <div
+          style={{ 
+            marginBottom: '2rem', 
+            maxWidth: '100%',
+            opacity: 1,
+            transform: 'scale(1)'
+          }}
         >
           <img 
             src={logoDefinitiva} 
@@ -52,12 +53,9 @@ export default function App() {
               maxHeight: '160px'
             }} 
           />
-        </motion.div>
+        </div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
+        <h1
           style={{ 
             fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', 
             fontWeight: '900', 
@@ -79,12 +77,9 @@ export default function App() {
           >
             Pro
           </span>
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
+        <p
           style={{ 
             fontSize: 'clamp(1.1rem, 4vw, 1.75rem)', 
             color: 'rgba(255,255,255,0.95)', 
@@ -96,12 +91,9 @@ export default function App() {
           }}
         >
           Seu melhor aplicativo para finanças e economia
-        </motion.p>
+        </p>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 1 }}
+        <div
           style={{ 
             position: 'relative', 
             width: 'clamp(80px, 20vw, 128px)', 
@@ -110,7 +102,7 @@ export default function App() {
           }}
         >
           {Array.from({ length: 12 }).map((_, i) => (
-            <motion.div
+            <div
               key={i}
               style={{
                 position: 'absolute',
@@ -122,24 +114,14 @@ export default function App() {
                 top: '50%',
                 marginLeft: `${-20 + Math.cos((i * 30) * Math.PI / 180) * 40}px`,
                 marginTop: `${-20 + Math.sin((i * 30) * Math.PI / 180) * 40}px`,
-              }}
-              animate={{ 
-                opacity: [0.3, 1, 0.3], 
-                scale: [0.7, 1.3, 0.7] 
-              }}
-              transition={{ 
-                duration: 1.8, 
-                repeat: Infinity, 
-                delay: i * 0.1 
+                opacity: 0.7,
+                animation: `spin ${1.8}s linear infinite ${i * 0.1}s`
               }}
             />
           ))}
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
+        <div
           style={{ 
             width: '100%', 
             maxWidth: 'min(90vw, 480px)',
@@ -156,13 +138,9 @@ export default function App() {
             <span style={{ fontWeight: '500', color: 'white' }}>
               Carregando...
             </span>
-            <motion.span 
-              style={{ fontWeight: '500', color: 'white' }}
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            >
+            <span style={{ fontWeight: '500', color: 'white' }}>
               {Math.round(progress)}%
-            </motion.span>
+            </span>
           </div>
           <div style={{ 
             width: '100%', 
@@ -171,18 +149,16 @@ export default function App() {
             height: '8px',
             overflow: 'hidden'
           }}>
-            <motion.div
+            <div
               style={{
                 height: '100%',
                 background: 'linear-gradient(90deg, #046bf3 0%, #22c55e 100%)',
-                borderRadius: '9999px'
+                borderRadius: '9999px',
+                width: `${progress}%`
               }}
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.1 }}
             />
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }

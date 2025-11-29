@@ -7,32 +7,43 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<'splash' | 'dashboard'>('splash');
   const [isLoading, setIsLoading] = useState(true);
 
-  // 12 SEGUNDOS DE LOADING
+  // 12 SEGUNDOS
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-      setTimeout(() => {
-        setCurrentScreen('dashboard');
-      }, 500);
-    }, 12000); // 👈 12 SEGUNDOS!
-
+      setTimeout(() => setCurrentScreen('dashboard'), 500);
+    }, 12000);
     return () => clearTimeout(timer);
   }, []);
 
   if (currentScreen === 'splash' || isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-[#046bf3] via-[#1e40af] to-[#1e3a8a]">
-        {/* LOGO PRINCIPAL */}
+      <div 
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          background: 'linear-gradient(135deg, #046bf3 0%, #1e40af 50%, #1e3a8a 100%)'
+        }}
+      >
+        {/* LOGO */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-12"
+          transition={{ duration: 1 }}
+          style={{ marginBottom: '3rem' }}
         >
           <img 
             src={logoDefinitiva} 
             alt="BudgetPro" 
-            className="w-40 h-40 object-contain drop-shadow-2xl"
+            style={{ 
+              width: '160px', 
+              height: '160px',
+              filter: 'drop-shadow(0 25px 25px rgba(0,0,0,0.3))'
+            }} 
           />
         </motion.div>
 
@@ -41,10 +52,25 @@ export default function App() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="text-5xl md:text-6xl font-black text-white mb-6 text-center leading-tight"
+          style={{ 
+            fontSize: '4.5rem', 
+            fontWeight: '900', 
+            color: 'white',
+            marginBottom: '1.5rem',
+            textAlign: 'center',
+            lineHeight: '1'
+          }}
         >
           Budget
-          <span className="bg-gradient-to-r from-[#046bf3] to-[#22c55e] bg-clip-text text-transparent">
+          <span 
+            style={{
+              background: 'linear-gradient(90deg, #046bf3 0%, #22c55e 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: '900'
+            }}
+          >
             Pro
           </span>
         </motion.h1>
@@ -54,26 +80,44 @@ export default function App() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="text-xl md:text-2xl text-white/90 font-light mb-12 text-center max-w-2xl mx-auto px-4"
+          style={{ 
+            fontSize: '1.75rem', 
+            color: 'rgba(255,255,255,0.95)', 
+            fontWeight: '300',
+            marginBottom: '3rem',
+            textAlign: 'center',
+            maxWidth: '32rem',
+            padding: '0 1rem'
+          }}
         >
           Seu melhor aplicativo para finanças e economia
         </motion.p>
 
-        {/* ✅ 12 BOLINHAS GIRANDO (COR #046BF3) */}
+        {/* ✅ 12 BOLINHAS #046BF3 - FORÇADAS COM STYLE */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 1 }}
-          className="relative w-32 h-32 mb-12"
+          style={{ 
+            position: 'relative', 
+            width: '128px', 
+            height: '128px', 
+            marginBottom: '3rem' 
+          }}
         >
           {Array.from({ length: 12 }).map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-4 h-4 bg-[#046bf3] rounded-full"
               style={{
+                position: 'absolute',
+                width: '16px',
+                height: '16px',
+                backgroundColor: '#046bf3',
+                borderRadius: '50%',
                 left: '50%',
                 top: '50%',
-                transform: `translate(${-25 + Math.cos((i * 30) * Math.PI / 180) * 50}px, ${-25 + Math.sin((i * 30) * Math.PI / 180) * 50}px)`,
+                marginLeft: `${-25 + Math.cos((i * 30) * Math.PI / 180) * 50}px`,
+                marginTop: `${-25 + Math.sin((i * 30) * Math.PI / 180) * 50}px`,
               }}
               animate={{ 
                 opacity: [0.3, 1, 0.3], 
@@ -88,23 +132,50 @@ export default function App() {
           ))}
         </motion.div>
 
-        {/* BARRA DE PROGRESSO (12 SEGUNDOS) */}
+        {/* BARRA DE PROGRESSO */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.2 }}
-          className="w-full max-w-md"
+          style={{ width: '100%', maxWidth: '480px' }}
         >
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-white/90">Carregando...</span>
-            <span className="text-sm font-medium text-white/90">100%</span>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '0.5rem' 
+          }}>
+            <span style={{ 
+              fontSize: '0.875rem', 
+              fontWeight: '500', 
+              color: 'rgba(255,255,255,0.95)' 
+            }}>
+              Carregando...
+            </span>
+            <span style={{ 
+              fontSize: '0.875rem', 
+              fontWeight: '500', 
+              color: 'rgba(255,255,255,0.95)' 
+            }}>
+              100%
+            </span>
           </div>
-          <div className="w-full bg-white/20 rounded-full h-2">
+          <div style={{ 
+            width: '100%', 
+            background: 'rgba(255,255,255,0.2)', 
+            borderRadius: '9999px', 
+            height: '8px' 
+          }}>
             <motion.div
-              className="bg-gradient-to-r from-[#046bf3] via-[#22c55e] to-[#86efac] h-2 rounded-full"
+              style={{
+                height: '8px',
+                background: 'linear-gradient(90deg, #046bf3 0%, #22c55e 50%, #86efac 100%)',
+                borderRadius: '9999px',
+                width: '0%'
+              }}
               initial={{ width: 0 }}
               animate={{ width: "100%" }}
-              transition={{ duration: 11, ease: "easeInOut" }} // 👈 11s + 1s bolinhas = 12s
+              transition={{ duration: 11, ease: "easeInOut" }}
             />
           </div>
         </motion.div>
@@ -113,16 +184,27 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#046bf3]/10 to-blue-500/10">
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-5xl font-black bg-gradient-to-r from-[#046bf3] to-[#22c55e] bg-clip-text text-transparent">
-            ✅ SPLASH PERFEITO!
-          </h1>
-          <p className="mt-6 text-xl text-gray-700">12 bolinhas girando + 12 segundos</p>
-          <p className="mt-2 text-lg font-semibold text-[#046bf3]">Cor #046BF3 aplicada!</p>
-          <p className="mt-4 text-sm text-gray-500">PRONTO PARA DASHBOARD ➡️</p>
-        </div>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, rgba(4, 107, 243, 0.05) 0%, rgba(59, 130, 246, 0.03) 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <h1 style={{ 
+          fontSize: '3rem', 
+          fontWeight: '900',
+          background: 'linear-gradient(90deg, #046bf3 0%, #22c55e 100%)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
+          ✅ SPLASH PERFEITO!
+        </h1>
+        <p style={{ marginTop: '1.5rem', fontSize: '1.25rem', color: '#374151' }}>
+          12 bolinhas #046BF3 + 12 segundos
+        </p>
       </div>
     </div>
   );

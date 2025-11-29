@@ -7,7 +7,6 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('splash');
   const [progress, setProgress] = useState(0);
 
-  // 12 SEGUNDOS RESPONSIVO
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -37,7 +36,6 @@ export default function App() {
           fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
         }}
       >
-        {/* LOGO - RESPONSIVA */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -56,7 +54,6 @@ export default function App() {
           />
         </motion.div>
 
-        {/* TÍTULO - RESPONSIVO */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -84,7 +81,6 @@ export default function App() {
           </span>
         </motion.h1>
 
-        {/* SUBTÍTULO - RESPONSIVO */}
         <motion.p
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -102,7 +98,6 @@ export default function App() {
           Seu melhor aplicativo para finanças e economia
         </motion.p>
 
-        {/* 12 BOLINHAS BRANCAS - RESPONSIVAS */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -141,7 +136,6 @@ export default function App() {
           ))}
         </motion.div>
 
-        {/* BARRA + % ANIMADO - RESPONSIVA */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -214,7 +208,7 @@ export default function App() {
           fontSize: 'clamp(1rem, 3vw, 1.25rem)',
           maxWidth: '90%'
         }}>
-          Responsivo + Sem erros + 12s + Bolinhas brancas
+          Responsivo + 12s + Bolinhas brancas + % animado
         </p>
       </div>
     );

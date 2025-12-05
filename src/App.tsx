@@ -1174,7 +1174,7 @@ const handleLogout = React.useCallback(async () => {
   // 🟦 DASHBOARD SCREEN
   if (currentScreen === 'dashboard') {
     const currentUser = JSON.parse(localStorage.getItem('budgetProUser') || '{}');
-    const userName = currentUser.name || 'Usuário';
+    const userName = currentUser.name ? currentUser.name.split(' ')[0] : 'Usuário';
     
     return (
       <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900' : 'bg-gray-50'}`}>

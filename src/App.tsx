@@ -1181,24 +1181,23 @@ const handleLogout = React.useCallback(async () => {
        <DarkModeToggle />
         <div className="px-4 pt-20 pb-4 shadow-sm" style={{ backgroundColor: '#046BF4' }}>
           <div className="flex items-center justify-between">
-            {/* LOGO MAIOR + NOME BONITÃO */}
+            {/* LOGO MUITO MAIOR E LINDA */}
             <div className="flex items-center gap-5">
               <img
                 src={logoDefinitiva}
                 alt="BudgetPro"
-                className="w-20 h-20 md:w-24 md:h-24 object-contain drop-shadow-2xl"
+                className="w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 object-contain drop-shadow-2xl"
               />
               <div>
-                <h1 className="text-white text-2xl md:text-3xl font-bold tracking-tight">
+                <h1 className="text-white text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
                   Olá, {userName}
                 </h1>
-                <p className="text-white/80 text-sm md:text-base">
+                <p className="text-white/80 text-sm md:text-base lg:text-lg">
                   Seja bem-vindo de volta!
                 </p>
               </div>
             </div>
 
-            {/* BOTÃO SAIR */}
             <Button
               onClick={handleLogout}
               className="flex items-center gap-2 text-white hover:bg-white/20 px-6 py-3 rounded-2xl transition-all font-semibold shadow-xl"

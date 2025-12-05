@@ -1178,21 +1178,21 @@ const handleLogout = React.useCallback(async () => {
     
     return (
       <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900' : 'bg-gray-50'}`}>
-       <DarkModeToggle />
-        <div className="px-4 pt-20 pb-4 shadow-sm" style={{ backgroundColor: '#046BF4' }}>
+               <DarkModeToggle />
+        <div className="px-6 pt-24 pb-6 shadow-sm" style={{ backgroundColor: '#046BF4' }}>
           <div className="flex items-center justify-between">
-            {/* LOGO MUITO MAIOR E LINDA */}
-            <div className="flex items-center gap-5">
+            {/* LOGO GIGANTE + TEXTO NORMAL */}
+            <div className="flex items-center gap-6">
               <img
                 src={logoDefinitiva}
                 alt="BudgetPro"
-                className="w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 object-contain drop-shadow-2xl"
+                className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 object-contain drop-shadow-2xl"
               />
               <div>
-                <h1 className="text-white text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
+                <h1 className="text-white text-2xl md:text-3xl font-bold">
                   Olá, {userName}
                 </h1>
-                <p className="text-white/80 text-sm md:text-base lg:text-lg">
+                <p className="text-white/70 text-base">
                   Seja bem-vindo de volta!
                 </p>
               </div>
@@ -1200,7 +1200,7 @@ const handleLogout = React.useCallback(async () => {
 
             <Button
               onClick={handleLogout}
-              className="flex items-center gap-2 text-white hover:bg-white/20 px-6 py-3 rounded-2xl transition-all font-semibold shadow-xl"
+              className="flex items-center gap-2 text-white hover:bg-white/20 px-6 py-3 rounded-2xl font-semibold shadow-xl"
             >
               <LogOut className="w-5 h-5" />
               Sair

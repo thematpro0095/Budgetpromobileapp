@@ -1178,25 +1178,30 @@ const handleLogout = React.useCallback(async () => {
     
     return (
       <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                <DarkModeToggle />
+       <DarkModeToggle />
         <div className="px-4 pt-20 pb-4 shadow-sm" style={{ backgroundColor: '#046BF4' }}>
-          {/* pt-20 = espaço pro DarkModeToggle não ficar em cima do botão Sair */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            {/* LOGO MAIOR + NOME BONITÃO */}
+            <div className="flex items-center gap-5">
               <img
                 src={logoDefinitiva}
                 alt="BudgetPro"
-                className="w-12 h-12 md:w-16 md:h-16 object-contain"
+                className="w-20 h-20 md:w-24 md:h-24 object-contain drop-shadow-2xl"
               />
-              <div className="ml-3 md:ml-4">
-                <h1 className="text-white text-lg md:text-xl font-semibold">Olá, {userName}</h1>
+              <div>
+                <h1 className="text-white text-2xl md:text-3xl font-bold tracking-tight">
+                  Olá, {userName}
+                </h1>
+                <p className="text-white/80 text-sm md:text-base">
+                  Seja bem-vindo de volta!
+                </p>
               </div>
             </div>
 
-            {/* BOTÃO SAIR PERFEITO (sem sobreposição) */}
+            {/* BOTÃO SAIR */}
             <Button
               onClick={handleLogout}
-              className="flex items-center gap-2 text-white hover:bg-white/20 px-5 py-3 rounded-xl transition-all font-medium shadow-lg"
+              className="flex items-center gap-2 text-white hover:bg-white/20 px-6 py-3 rounded-2xl transition-all font-semibold shadow-xl"
             >
               <LogOut className="w-5 h-5" />
               Sair
